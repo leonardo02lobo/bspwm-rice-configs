@@ -1,0 +1,7 @@
+(include "cheatsheet/cheatsheet.yuck")
+(include "calendar/calendar.yuck")
+(include "profilecard/profilecard.yuck")
+(include "player/player.yuck")
+(include "volume/volume.yuck")
+(include "brightness/brightness.yuck")
+(include "wifi/wifi.yuck")

@@ -1,0 +1,108 @@
+;; =============================================
+;; WiFi Widget
+;; =============================================
+
+(defpoll wifi-enabled
+  :interval "3s"
+  :initial "enabled"
+  "LC_ALL=C nmcli radio wifi 2>/dev/null || echo disabled")
+
+(defpoll wifi-ssid
+  :interval "3s"
+  :initial ""
+  "LC_ALL=C nmcli -t -f ACTIVE,SSID dev wifi list 2>/dev/null | grep '^yes' | cut -d: -f2 | head -1 || echo ''")
+
+(defpoll wifi-signal
+  :interval "3s"
+  :initial "0"
+  "LC_ALL=C nmcli -t -f ACTIVE,SIGNAL dev wifi list 2>/dev/null | grep '^yes' | cut -d: -f2 | head -1 || echo '0'")
+
+(defpoll wifi-ip
+  :interval "5s"
+  :initial ""
+  "LC_ALL=C nmcli -g IP4.ADDRESS dev show wlan0 2>/dev/null | head -1 | cut -d/ -f1 || echo ''")
+
+(defpoll wifi-list-markup
+  :interval "3s"
+  :initial "(box)"
+  "~/.config/bspwm/scripts/wifi/get_wifi_list_eww.sh")
+
+;; ─── Header: current network ───────────────────────
+
+(defwidget wifi-header []
+  (box
+    :class "wifi-header"
+    :orientation "h"
+    :space-evenly false
+    :spacing 12
+    :valign "center"
+    (label
+      :class "wifi-main-icon"
+      :text {
+        wifi-enabled != "enabled" ? "󰖪" :
+        wifi-ssid == ""           ? "󰤮" :
+        wifi-signal >= 75         ? "󰤨" :
+        wifi-signal >= 50         ? "󰤥" :
+        wifi-signal >= 25         ? "󰤢" :
+                                    "󰤟"
+      }
+    )
+    (box
+      :orientation "v"
+      :space-evenly false
+      :spacing 2
+      :hexpand true
+      (label
+        :class "wifi-ssid-main"
+        :text {
+          wifi-enabled != "enabled" ? "WiFi desactivado" :
+          wifi-ssid == ""           ? "Desconectado"     :
+          wifi-ssid
+        }
+        :halign "start"
+        :limit-width 24
+      )
+      (label
+        :class "wifi-ip-label"
+        :text {wifi-ip == "" ? "Sin IP" : wifi-ip}
+        :halign "start"
+      )
+    )
+    (button
+      :class {wifi-enabled == "enabled" ? "wifi-toggle on" : "wifi-toggle off"}
+      :onclick "~/.config/bspwm/scripts/wifi/toggle_wifi.sh"
+      {wifi-enabled == "enabled" ? "󰖩  ON" : "󰖪  OFF"}
+    )
+  )
+)
+
+;; ─── Full widget ───────────────────────────────────
+
+(defwidget wifi-osd []
+  (box
+    :class "wifi-osd"
+    :orientation "v"
+    :space-evenly false
+    :spacing 8
+    (wifi-header)
+    (box :class "wifi-sep")
+    (scroll
+      :class "wifi-scroll"
+      :height 210
+      :vscroll true
+      :hscroll false
+      (literal :content wifi-list-markup)
+    )
+  )
+)
+
+(defwindow wifi
+  :geometry (geometry
+    :x "8%"
+    :y "7%"
+    :width "320px"
+    :anchor "top left")
+  :wm-ignore true
+  :focusable true
+  :stacking "overlay"
+  (wifi-osd))

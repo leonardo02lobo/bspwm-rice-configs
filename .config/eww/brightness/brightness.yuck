@@ -1,0 +1,62 @@
+;; =============================================
+;; Brightness OSD Widget
+;; =============================================
+
+(defpoll bri-level
+  :interval "500ms"
+  :initial "0"
+  "~/.config/bspwm/scripts/brightness/get_brightness.sh")
+
+(defwidget brightness-osd []
+  (box
+    :class "bri-osd"
+    :orientation "h"
+    :space-evenly false
+    :spacing 14
+    :valign "center"
+    (label
+      :class "bri-icon"
+      :text {
+        bri-level <= 0    ? "󰃞" :
+        bri-level <= 25   ? "󰃟" :
+        bri-level <= 50   ? "󰃠" :
+        bri-level <= 75   ? "󰃢" :
+                           "󰃣"
+      }
+    )
+    (box
+      :class "bri-info"
+      :orientation "v"
+      :space-evenly false
+      :spacing 5
+      :hexpand true
+      (box
+        :class "bri-bar-wrap"
+        (scale
+          :class "bri-bar"
+          :min 0
+          :max 100
+          :value bri-level
+          :active false
+          :orientation "h"
+          :hexpand true
+        )
+      )
+      (label
+        :class "bri-label"
+        :text "${bri-level}%"
+        :halign "center"
+      )
+    )
+  )
+)
+
+(defwindow brightness
+  :geometry (geometry
+    :y "-7%"
+    :width "280px"
+    :anchor "bottom center")
+  :wm-ignore true
+  :focusable false
+  :stacking "overlay"
+  (brightness-osd))

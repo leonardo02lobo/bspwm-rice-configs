@@ -1,0 +1,67 @@
+;; =============================================
+;; Volume OSD Widget
+;; =============================================
+
+(defpoll vol-level
+  :interval "500ms"
+  :initial "0"
+  "~/.config/bspwm/scripts/volume/get_volume.sh")
+
+(defpoll vol-muted
+  :interval "500ms"
+  :initial "no"
+  "~/.config/bspwm/scripts/volume/get_mute.sh")
+
+(defwidget volume-osd []
+  (box
+    :class "vol-osd"
+    :orientation "h"
+    :space-evenly false
+    :spacing 14
+    :valign "center"
+    (label
+      :class {vol-muted == "yes" ? "vol-icon muted" : "vol-icon"}
+      :text {
+        vol-muted == "yes" ? "󰝟" :
+        vol-level <= 0    ? "󰝟" :
+        vol-level <= 33   ? "󰕿" :
+        vol-level <= 66   ? "󰖀" :
+                            "󰕾"
+      }
+    )
+    (box
+      :class "vol-info"
+      :orientation "v"
+      :space-evenly false
+      :spacing 5
+      :hexpand true
+      (box
+        :class "vol-bar-wrap"
+        (scale
+          :class "vol-bar"
+          :min 0
+          :max 150
+          :value {vol-muted == "yes" ? 0 : vol-level}
+          :active false
+          :orientation "h"
+          :hexpand true
+        )
+      )
+      (label
+        :class {vol-muted == "yes" ? "vol-label muted-label" : "vol-label"}
+        :text {vol-muted == "yes" ? "SILENCIADO" : "${vol-level}%"}
+        :halign "center"
+      )
+    )
+  )
+)
+
+(defwindow volume
+  :geometry (geometry
+    :y "-7%"
+    :width "280px"
+    :anchor "bottom center")
+  :wm-ignore true
+  :focusable false
+  :stacking "overlay"
+  (volume-osd))
