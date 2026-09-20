@@ -1,39 +1,37 @@
 #!/usr/bin/env bash
+# Single control path for Spotify over MPRIS, shared by the sxhkd bindings and
+# the eww player widget. Control commands are silent no-ops when Spotify is not
+# running, so a keypress with no player never leaves errors or stray processes.
 
-# Simple Spotify Control
-# Just call ./spotify_control --help
+readonly PLAYER="spotify"
 
-CMD="dbus-send --print-reply --dest=org.mpris.MediaPlayer2.spotify /org/mpris/MediaPlayer2 org.mpris.MediaPlayer2.Player"
+pl() { playerctl -p "$PLAYER" "$@" 2>/dev/null; }
 
 case "$1" in
-  "playpause" )
-    ${CMD}.PlayPause
-    exit $?
-  ;;
-  "next" )
-    ${CMD}.Next
-    exit $?
-  ;;
-  "previous" )
-    ${CMD}.Previous
-    exit $?
-  ;;
-  "stop" )
-    ${CMD}.Stop
-    exit $?
-  ;;
-  "play" )
-    ${CMD}.Play
-    exit $?
-  ;;
-  "looptrack" )
-    ${CMD}.LoopStatus Track
-    exit $?
-  ;;
+  playpause)     pl play-pause ;;
+  play)          pl play ;;
+  next)          pl next ;;
+  previous)      pl previous ;;
+  stop)          pl stop ;;
+  seek-forward)  pl position 8+ ;;
+  seek-backward) pl position 8- ;;
+  seek-to)       pl position "$2" ;;
+  shuffle)       pl shuffle toggle ;;
+  repeat)
+    if [[ -n "$2" ]]; then
+      pl loop "$2"
+    else
+      case "$(pl loop)" in
+        None)     pl loop Playlist ;;
+        Playlist) pl loop Track ;;
+        *)        pl loop None ;;
+      esac
+    fi
+    ;;
   *)
-    echo "Usage: $0 [command]"
-    echo "  commands are: playpause, next, previous, stop, play"
+    echo "Usage: ${0##*/} {playpause|play|next|previous|stop|seek-forward|seek-backward|seek-to SECONDS|shuffle|repeat [None|Track|Playlist]}" >&2
     exit 1
-  ;;
+    ;;
 esac
 
+exit 0

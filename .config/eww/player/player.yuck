@@ -1,23 +1,22 @@
-;; Vars ;;
+;; =============================================
+;; Spotify Player Widget
+;; =============================================
 
-(defpoll music-player		:interval "1s" "playerctl -l | grep spotify")
-(defpoll music-art			:interval "1s" "playerctl -p spotify metadata mpris:artUrl | sed 's/^.*: //'")
-(defpoll music-title 		:interval "1s" "playerctl -p spotify metadata title")
-(defpoll music-artist 		:interval "1s" "playerctl -p spotify metadata artist")
-(defpoll music-status 		:interval "1s" "playerctl -p spotify status")
-(defpoll music-position 	:interval "1s" "playerctl -p spotify position")
-(defpoll music-positions	:interval "1s" "playerctl -p spotify metadata mpris:length | sed 's/^.*: //'")
-(defpoll music-length 		:interval "1s" "playerctl -p spotify metadata mpris:length | sed 's/^.*: //'")
-(defpoll music-lengths 		:interval "1s" "playerctl -p spotify metadata mpris:length | sed 's/^.*: //'")
-(defpoll shuffle 			:interval "1s" "playerctl -p spotify loop")
-(defpoll loop 				:interval "1s" "playerctl -p spotify shuffle")
+;; One snapshot per tick: a single process instead of one per field, since
+;; defpoll keeps running while the window is closed.
+(defpoll player
+	:interval "1s"
+	:initial '{"status":"Offline","title":"","artist":"","shuffle":"Off","repeat":"None","position":0,"length":1,"position_fmt":"0:00","length_fmt":"0:00"}'
+	"~/.config/bspwm/scripts/player/get_player_state.sh")
+
+(defvar ctl "~/.config/sxhkd/scripts/spotify_control")
 
 ;; Widgets ;;
 
 (defwidget shuffle [color action status]
 	(eventbox
 		:cursor "pointer"
-		(button 
+		(button
 			:onclick action
 			:style "color: ${color}"
 			:tooltip status
@@ -29,7 +28,7 @@
 (defwidget loop [icon color status action]
 	(eventbox
 		:cursor "pointer"
-		(button 
+		(button
 			:onclick action
 			:style "color: ${color}"
 			:tooltip status
@@ -39,95 +38,95 @@
 )
 
 (defwidget player []
-	(box 
-		:class "player" 
+	(box
+		:class "player"
 		:space-evenly false
-		(box 
-			:class "player-art" 
-			:style "background-image: url('${music-art}')"
-			(box 
-				:class "player-info" 
-				:space-evenly false 
-				:orientation "v" 
+		(box
+			:class "player-art"
+			(box
+				:class "player-info"
+				:space-evenly false
+				:orientation "v"
 				:spacing 10
-				(box 
+				(box
 					:class "top-icons"
-					(box 
-						:space-evenly false 
+					(box
+						:space-evenly false
 						:spacing 10
 						(shuffle
-							:action "playerctl -p spotify shuffle toggle"
-							:color {shuffle == "On" ? "#81ae5f" : "#b8bfe5"}
-							:status shuffle
+							:action "${ctl} shuffle"
+							:color {player.shuffle == "On" ? "#81ae5f" : "#b8bfe5"}
+							:status "Aleatorio: ${player.shuffle}"
 						)
 						(loop
-							:action "playerctl -p spotify loop toggle"
-							:icon "󰑖" ;; Cambiar a tu icono preferido para el modo de repetición
-							:color {loop == "On" ? "#81ae5f" : "#b8bfe5"}
-							:status loop
+							:action "${ctl} repeat"
+							:icon {player.repeat == "Track" ? "󰑘" : "󰑖"}
+							:color {player.repeat == "None" ? "#b8bfe5" : "#81ae5f"}
+							:status "Repetir: ${player.repeat}"
 						)
 					)
 					(box
-						(button 
+						(button
 							:class "spotify-icon"
 							:halign "end"
 							"󰓇"
 						)
 					)
 				)
-				(label 
-					:class "player-title" 
-					:halign "start" 
-					:text music-title
+				(label
+					:class "player-title"
+					:halign "start"
+					:text {player.status == "Offline" ? "Sin reproductor activo" : player.title}
 					:limit-width 30
 					:wrap true
 					:xalign 0
 				)
-				(label 
-					:class "player-artist" 
-					:halign "start" 
-					:text music-artist 
+				(label
+					:class "player-artist"
+					:halign "start"
+					:text {player.status == "Offline" ? "" : player.artist}
 					:limit-width 35
 				)
-				
+
 				(box
 					:space-evenly false
 					:orientation "v"
 					:valign "end"
 					:spacing 6
 					:vexpand true
-					(box 
-						:class "player-bar" 
+					(box
+						:class "player-bar"
 						(eventbox
 							:cursor "pointer"
-							(scale 
-								:onchange "playerctl -p spotify seek {}"
-								:min 0 
-								:max music-lengths
-								:value music-positions
+							(scale
+								:onchange "${ctl} seek-to {}"
+								:min 0
+								:max {player.length}
+								:value {player.position}
+								:active {player.status != "Offline"}
 							)
 						)
 					)
-					(box 
-						:class "player-position" 
-						:space-evenly false 
+					(box
+						:class "player-position"
+						:space-evenly false
 						:valign "end"
 						:spacing 3
-						(label 
+						(label
 							:class "player-time"
-							:text music-position
+							:text {player.position_fmt}
 						)
 						(label :class "player-time" :text "/")
-						(label 
+						(label
 							:class "player-time"
-							:text music-length
-						)	
+							:text {player.length_fmt}
+						)
 					)
 				)
 			)
 		)
-		(box 
-			:class "player-controls" 
+		(box
+			:class "player-controls"
 			:orientation "v"
 			:valign "center"
 			:hexpand true
@@ -135,44 +134,48 @@
 			:spacing 20
 			(eventbox
 				:cursor "pointer"
-				(button 
-					:class "player-previous" 
-					:onclick "playerctl -p spotify previous"
+				(button
+					:class "player-previous"
+					:onclick "${ctl} previous"
 					"󰒮"
 				)
 			)
 			(eventbox
 				:cursor "pointer"
-				(button 
-					:class "player-toggle" 
-					:onclick "playerctl -p spotify play-pause" 
-					{music-status == "Playing" ? "󰏤" : music-status == "Paused" ? "󰐊" : "󰓛"}
+				(button
+					:class "player-toggle"
+					:onclick "${ctl} playpause"
+					{player.status == "Playing" ? "󰏤" : player.status == "Paused" ? "󰐊" : "󰓛"}
 				)
 			)
 			(eventbox
 				:cursor "pointer"
-				(button 
-					:class "player-next" 
-					:onclick "playerctl -p spotify next" 
+				(button
+					:class "player-next"
+					:onclick "${ctl} next"
 					"󰒭"
 				)
 			)
-      (eventbox
+			(eventbox
 				:cursor "pointer"
-				(button 
-					:class "min" 
-					:onclick "eww open --toggle music" 
+				(button
+					:class "min"
+					:onclick "eww -c ~/.config/eww close music"
 					"󰅙"
 				)
 			)
-		)		
+		)
 	)
 )
 
 ;; Windows ;;
 
+;; 46px = Polybar bar/main height (42px) plus 4px of air. Absolute pixels, not
+;; a percentage: the bar is 42px tall whatever the output's resolution is.
 (defwindow music
-    :geometry (geometry :y "-7%"
-						:anchor "bottom center")
-	:wm-ignore false
-    (player))
+	:geometry (geometry :y "46px"
+						:anchor "top right")
+	:wm-ignore true
+	:focusable true
+	:stacking "overlay"
+	(player))
