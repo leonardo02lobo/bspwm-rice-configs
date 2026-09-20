@@ -37,37 +37,41 @@ The panel's shuffle and repeat indicators MUST reflect the state they are labell
 
 ### Requirement: Anchoring below the Polybar bar
 
-The window MUST anchor to the top-right corner with a fixed vertical offset of 46px, so it sits directly below Polybar's `bar/main` (42px tall plus 4px of breathing room). The offset MUST be expressed in absolute pixels, not as a percentage.
+The window MUST anchor to the top-right corner and sit entirely below the running Polybar top bar, with its right edge aligned to the bar's. Offsets MUST be expressed in absolute pixels, not percentages, and MUST be derived from the measured geometry of the running bar rather than from a configuration file, since the bar definition Polybar actually loads is not the one `config.ini` suggests.
 
 #### Scenario: Window geometry
 
 - **WHEN** the `defwindow music` definition is inspected
-- **THEN** its geometry uses `:anchor "top right"`
-- **AND** its `y` coordinate is `"46px"`
+- **THEN** its geometry uses `:anchor "top right"` with offsets given in pixels
 
 #### Scenario: The panel does not overlap the bar
 
 - **WHEN** the panel opens while the Polybar bar is visible
 - **THEN** the panel's top edge sits below the bar's bottom edge, without covering it
 
-### Requirement: Explicit monitor and daemon selection
+#### Scenario: The panel stays on screen
 
-The window MUST open on the same physical output where Polybar renders its bar (`eDP`, falling back to `HDMI-2`), specified explicitly rather than relying on the monitor X marks as `primary`. Every EWW invocation MUST name its configuration directory explicitly, since a second EWW daemon runs on this system.
+- **WHEN** the panel opens
+- **THEN** its right edge is within the screen bounds and aligned with the bar's right edge
+
+### Requirement: Monitor and daemon selection
+
+The window MUST open on the output X marks as `primary`, resolved at invocation time, because the Polybar bars that are actually launched leave `monitor` unset and therefore follow the primary too. Every EWW invocation MUST name its configuration directory explicitly, since a second EWW daemon runs on this system.
 
 #### Scenario: Single monitor connected
 
-- **WHEN** only the internal `eDP` panel is connected and the widget is opened
-- **THEN** the panel appears on `eDP`, below the bar
+- **WHEN** only the internal panel is connected and the widget is opened
+- **THEN** the panel appears on that output, below the bar
 
-#### Scenario: External monitor connected with a different primary
+#### Scenario: External monitor becomes primary
 
-- **WHEN** an external monitor is connected and X marks it as `primary`, while Polybar still renders on `eDP`
-- **THEN** the panel appears on `eDP`, below the bar, and not on the external monitor
+- **WHEN** an external monitor is connected and X marks it as `primary`, so Polybar renders its bar there
+- **THEN** the panel appears on that same external monitor, below the bar
 
-#### Scenario: Internal panel absent
+#### Scenario: No primary marked
 
-- **WHEN** `eDP` is not connected and Polybar falls back to `HDMI-2`
-- **THEN** the panel appears on `HDMI-2`
+- **WHEN** no connected output is marked `primary`
+- **THEN** the panel opens on the first connected output instead of failing
 
 #### Scenario: The correct daemon is addressed
 

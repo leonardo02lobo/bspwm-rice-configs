@@ -8,10 +8,12 @@ El punto de partida real no es un hueco vacío, sino un widget completo que no a
 
 Dos restricciones del entorno que condicionan el diseño:
 
-- **`~/.config/` no son symlinks al repo**, son copias independientes que hoy coinciden. Editar el repo no cambia la sesión viva; verificar exige copiar primero.
+- **`~/.config/` no son symlinks al repo**, son copias independientes. Editar el repo no cambia la sesión viva; por eso el cambio añade `sync.sh`, con un modo `--check` que delata la deriva entre ambos lados.
 - **Corren dos daemons de eww**: el de `~/.config/eww` y otro que `bspwmrc` lanza con `--config ~/Documentos/Project/display-manager/widget/eww`. Un `eww open` sin `-c` puede acabar en el daemon equivocado. `show_wifi_widget.sh` ya pasa `-c` explícito; es el precedente a seguir.
 
-La barra superior es Polybar `bar/main` (`bottom = false`, `height = 42`, `monitor = "eDP"`, `monitor-fallback = "HDMI-2"`), definida en `~/.config/polybar/` — fuera de este repositorio. Polybar no itera sobre los outputs conectados: renderiza una sola barra, en `eDP` o en `HDMI-2`, nunca en ambos.
+La barra superior vive en `~/.config/polybar/` — fuera de este repositorio — y hay una trampa ahí: `config.ini` define un `[bar/main]` de `height = 42` fijado a `monitor = "eDP"` con fallback a `HDMI-2`, pero **`launch.sh` nunca carga ese archivo**. Las barras reales salen de `current.ini` y `workspace.ini`, cuyos bloques dejan `monitor` vacío, es decir siguen al output primario de X.
+
+La geometría que importa se midió con `xwininfo` sobre las ventanas vivas, no leyendo `.ini`: la barra superior de ancho completo (`principal_bar`, con `wm-name = log`) ocupa `1908x48+7+12`, o sea de `y = 12` a `y = 60`, con 7px de margen respecto al borde de la pantalla.
 
 ## Goals / Non-Goals
 
@@ -25,7 +27,7 @@ La barra superior es Polybar `bar/main` (`bottom = false`, `height = 42`, `monit
 **Non-Goals:**
 
 - **Reescribir el widget desde cero.** Su estructura y estilos funcionan; el trabajo es de cableado y ubicación.
-- **Generalizar el rice a multi-monitor.** El widget se pinea al output donde Polybar ya renderiza.
+- **Generalizar el rice a multi-monitor.** El widget sigue el mismo output que Polybar y nada más.
 - **Carátula del álbum.** Ver decisión 6.
 - **Control de volumen.** Ver decisión 7.
 - **Funciones de la Web API** (Spotify Connect, "me gusta", playlists): MPRIS no las expone.
@@ -57,21 +59,25 @@ Tres bugs concretos, todos de variables mal enchufadas:
 
 **Por qué corregirlos aquí:** reubicar un widget que muestra información falsa no resuelve el problema del usuario, y son correcciones de pocas líneas sobre código que ya existe.
 
-### 4. Anclaje `top right` con offset fijo de 46px
+### 4. Anclaje `top right` con offset medido, no leído
 
-`:anchor "top right"`, `:y "46px"` (42px de `bar/main` + 4px de aire), sustituyendo el `:y "-7%"` / `bottom center` actual.
+`:anchor "top right"`, `:y "64px"`, `:x "-7px"`, sustituyendo el `:y "-7%"` / `bottom center` actual.
 
-**Por qué píxeles y no porcentaje:** la barra mide 42px absolutos independientemente de la resolución del output, así que el offset correcto también es absoluto. El `-7%` actual se desalinea al cambiar de resolución.
+**De dónde salen los números:** la barra termina en `y = 60` y está inset 7px del borde; 64px la libra con 4px de aire y el `-7px` alinea el borde derecho del panel con el de la barra. Con anclaje a la derecha, un `:x` positivo empuja la ventana **fuera** de la pantalla, de ahí el signo negativo.
 
-**Acoplamiento aceptado:** el 46px depende de un valor en un archivo fuera del repo. Leer el `.ini` de Polybar en arranque añadiría fragilidad por un beneficio marginal; se documenta en el README.
+**Por qué medir en vez de leer el `.ini`:** el primer intento usó los 42px de `config.ini` y colocó el panel en `y = 46`, solapando la barra 14px, porque ese archivo no es el que Polybar carga. `xwininfo` sobre la ventana viva es la única fuente fiable aquí.
 
-### 5. Monitor explícito, no el `primary` de X
+**Por qué píxeles y no porcentaje:** la barra mide 48px absolutos independientemente de la resolución del output. El `-7%` actual se desalinea al cambiar de resolución.
 
-La ventana se abre indicando el output explícitamente, replicando la lógica de Polybar: `eDP`, y `HDMI-2` si `eDP` no está conectado.
+**Acoplamiento aceptado:** el offset depende de valores en archivos fuera del repo. Leerlos en arranque añadiría fragilidad por un beneficio marginal; se documenta en el README.
 
-**Por qué:** Polybar fija su barra por nombre de salida, no por `primary`. Si al conectar un externo ese externo queda marcado como `primary`, EWW abriría el panel ahí mientras la barra sigue en `eDP`: el panel flotaría bajo una barra inexistente. No hay `.xprofile`, `.xinitrc` ni `autorandr` que gestione qué output es `primary`, así que no se puede asumir.
+### 5. Seguir el output primario, como hace Polybar
 
-**Dónde vive la decisión:** en el script de toggle, vía `--screen`, no en el `.yuck`. El script puede consultar los outputs conectados y aplicar el fallback; el `.yuck` es estático.
+La ventana se abre en el output que X marca como `primary`, resuelto en tiempo de invocación con `xrandr`.
+
+**Por qué:** las barras que `launch.sh` realmente arranca dejan `monitor` vacío, y Polybar en ese caso usa el primario. Fijar el panel a un output concreto lo dejaría varado en una pantalla sin barra en cuanto otro monitor pase a ser primario — exactamente el desalineamiento que se quería evitar, pero al revés. El `monitor = "eDP"` con fallback a `HDMI-2` que sugiere `config.ini` describe una configuración que no está en uso.
+
+**Dónde vive la decisión:** en el script de toggle, vía `--screen`, no en el `.yuck`. El script puede consultar `xrandr` en cada invocación; el `.yuck` es estático.
 
 ### 6. La carátula queda fuera de alcance, pero se deja degradando limpio
 
@@ -115,7 +121,7 @@ Los scripts de lectura salen con código cero siempre, devolviendo `Offline` par
 
 ## Risks / Trade-offs
 
-- **El repo y la sesión viva son copias independientes** → cada verificación exige copiar del repo a `~/.config/` primero; se hace explícito en las tareas y no se da por hecho.
+- **El repo y la sesión viva son copias independientes** → `sync.sh` automatiza la copia y `sync.sh --check` detecta la deriva, que es como el repo se quedó atrás sin que nadie lo notara.
 - **Dos daemons de eww corriendo** → todas las invocaciones nuevas pasan `-c ~/.config/eww` explícito, como ya hace `show_wifi_widget.sh`.
 - **Migrar `super + F10/F11/Pause/Delete` toca atajos que hoy sí funcionan** → se verifica cada uno manualmente tras la migración; el `dbus-send` original queda en el historial de git.
 - **`super + ctrl + s` podría chocar con algún atajo** → verificado contra `sxhkdrc`: los `super + ctrl` ocupados son `w`, `m/x/y/z`, `h/j/k/l`, `1-9`, `space`, `shift + space` y las flechas. `s` está libre.
@@ -134,6 +140,6 @@ Los scripts de lectura salen con código cero siempre, devolviendo `Offline` par
 
 ## Open Questions
 
-- ¿El offset de 46px se ve bien, o el panel necesita más aire? Se ajusta al verlo.
+- ¿Los 4px de aire bajo la barra son suficientes? Verificado en pantalla; se ajusta si molesta.
 - ¿Conviene que el panel se cierre al perder el foco? El de WiFi no lo hace; se mantiene el mismo comportamiento salvo que moleste.
 - La carátula y el volumen por `pactl` quedan como candidatos a una segunda iteración.

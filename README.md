@@ -20,7 +20,7 @@ Personal BSPWM setup with custom EWW widgets and hardware-friendly input configu
 - **Brightness OSD**: controlled via `light` with 5% steps; auto-closes after 3 seconds.
 - **Volume OSD**: 5% steps with mute state; auto-closes after 3 seconds.
 - **WiFi widget**: toggle radio, scan networks, connect/disconnect with `nmcli` + `rofi` password prompt.
-- **Spotify widget**: track metadata, playback controls, shuffle and repeat, driven over MPRIS with `playerctl`. Controls are shared with the media keys through `.config/sxhkd/scripts/spotify_control`, so both paths behave the same. The panel anchors to the top right with a fixed `46px` offset, which is Polybar's `bar/main` height (`42px`) plus `4px` of air — **if you change that height, update the offset in `.config/eww/player/player.yuck`**. It opens on the same output Polybar uses (`eDP`, falling back to `HDMI-2`) rather than on X's primary monitor.
+- **Spotify widget**: track metadata, playback controls, shuffle and repeat, driven over MPRIS with `playerctl`. Controls are shared with the media keys through `.config/sxhkd/scripts/spotify_control`, so both paths behave the same. The panel anchors to the top right, clearing the Polybar top bar by `4px`. Those offsets were measured with `xwininfo` against the running bar, not read from a config file — `config.ini` looks authoritative but `launch.sh` never loads it, so its numbers are wrong. **If you change the bar's height or margin, re-measure and update the offsets in `.config/eww/player/player.yuck`.** The panel opens on X's primary output, which is what the running bars follow.
 - **Touchpad**: works like a laptop touchpad (tap-to-click, two-finger right click, three-finger middle click, natural scrolling, disable while typing).
 
 ## Requirements
@@ -46,8 +46,12 @@ Personal BSPWM setup with custom EWW widgets and hardware-friendly input configu
 
 2. Sync the dotfiles to your `~/.config` (back up first):
    ```bash
-   cp -r .config/* ~/.config/
+   ./sync.sh
    ```
+   `~/.config` holds real copies, not symlinks, so editing this repo changes
+   nothing until you run this. Use `./sync.sh --check` to list what differs
+   between the two sides without writing anything — worth running before you
+   edit, since the live config can drift ahead of git.
 
 3. Install the touchpad X11 config (requires root):
    ```bash
@@ -62,10 +66,11 @@ Personal BSPWM setup with custom EWW widgets and hardware-friendly input configu
 
 5. Restart your BSPWM / Xorg session.
 
-> **Note**: `~/.config/polybar/` is not tracked in this repository. The Spotify
-> widget assumes Polybar's `bar/main` is 42px tall and pinned to `eDP`. The dead
-> `[module/mpd]` and `[module/mpd_control]` entries there point at an MPD daemon
-> that never runs, and removing them is a manual step.
+> **Note**: `~/.config/polybar/` is not tracked in this repository, so changes
+> there are manual and unversioned. Be aware that `config.ini` is dead weight:
+> `launch.sh` loads `current.ini` and `workspace.ini` instead, so the bar you
+> see on screen is `principal_bar`, not the `[bar/main]` defined in
+> `config.ini`. Measure with `xwininfo` before trusting any of those values.
 
 ## Hotkeys
 

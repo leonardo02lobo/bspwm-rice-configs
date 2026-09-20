@@ -170,10 +170,14 @@
 
 ;; Windows ;;
 
-;; 46px = Polybar bar/main height (42px) plus 4px of air. Absolute pixels, not
-;; a percentage: the bar is 42px tall whatever the output's resolution is.
+;; Polybar's top bar (principal_bar, launched from current.ini) occupies y 12
+;; to 60 and is inset 7px from the screen edge, measured with xwininfo rather
+;; than read off a config file — config.ini looks authoritative but launch.sh
+;; never loads it. 64px clears the bar with 4px of air; absolute pixels,
+;; since the bar height does not scale with the output's resolution.
 (defwindow music
-	:geometry (geometry :y "46px"
+	:geometry (geometry :x "-7px"
+						:y "64px"
 						:anchor "top right")
 	:wm-ignore true
 	:focusable true

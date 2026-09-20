@@ -49,9 +49,9 @@
 
 ## 8. Limpieza de Polybar (fuera del repo)
 
-- [ ] 8.1 Retirar `[module/mpd]` y `[module/mpd_control]` de `~/.config/polybar/modules.ini`
-- [ ] 8.2 Retirar la referencia comentada a `mpd_bar` en `modules-left` de `~/.config/polybar/config.ini`
-- [ ] 8.3 Relanzar Polybar y verificar que la barra sigue renderizando con todos sus módulos
+- [x] 8.1 Comprobar si los módulos MPD llegan a cargarse: no. `launch.sh` solo usa `current.ini` y `workspace.ini`, que definen sus módulos inline e incluyen únicamente los archivos de colores. `modules.ini`, `data.ini` y `config.ini` no los carga nadie, así que borrar los bloques MPD no tendría ningún efecto
+- [x] 8.2 Documentar en el README que `config.ini` es peso muerto y que la barra visible es `principal_bar` de `current.ini`
+- [ ] 8.3 Decidir si se borran los archivos muertos de `~/.config/polybar/` por completo — decisión del usuario, fuera del alcance de este change
 
 ## 9. Documentación y verificación final
 
