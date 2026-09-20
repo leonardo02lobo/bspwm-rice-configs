@@ -10,6 +10,8 @@
 	"~/.config/bspwm/scripts/player/get_player_state.sh")
 
 (defvar ctl "~/.config/sxhkd/scripts/spotify_control")
+(defvar hover "~/.config/bspwm/scripts/player/hover_player.sh")
+(defvar player-hover false)
 
 ;; Widgets ;;
 
@@ -37,7 +39,10 @@
 	)
 )
 
-(defwidget player []
+;; closable: the hover window hides itself when the pointer leaves, so a close
+;; button there would be dead weight — and worse, it would close the *other*
+;; window, since that is the one the button names.
+(defwidget player [closable]
 	(box
 		:class "player"
 		:space-evenly false
@@ -160,6 +165,7 @@
 				)
 			)
 			(eventbox
+				:visible closable
 				:cursor "pointer"
 				(button
 					:class "min"
@@ -185,4 +191,50 @@
 	:wm-ignore true
 	:focusable true
 	:stacking "overlay"
-	(player))
+	(player :closable true))
+
+
+;; Two windows, not one: eww reserves the revealer child's width even while
+;; collapsed, so a combined window measured 365x30 at rest and sat on top of
+;; the primary_bar module. Both windows listen for hover and share one pending
+;; hide, so crossing the ~27px of bare screen between them cancels the hide
+;; armed by leaving the icon.
+(defwidget player-trigger-icon []
+	(eventbox
+		:cursor "pointer"
+		:onhover "${hover} show"
+		:onhoverlost "${hover} hide"
+		(label :class "player-trigger" :text "󰓇")))
+
+(defwidget player-hover-panel []
+	(eventbox
+		:onhover "${hover} show"
+		:onhoverlost "${hover} hide"
+		(revealer
+			:transition "slidedown"
+			:duration "200ms"
+			:reveal player-hover
+			(player :closable false))))
+
+;; Sits in the bar's free gap, measured with xwininfo: modules occupy up to
+;; x 1078 and resume at x 1242, so a right edge at x 1230 lands inside it.
+(defwindow player-trigger
+	:geometry (geometry :x "-690px"
+						:y "19px"
+						:anchor "top right")
+	:wm-ignore true
+	:focusable false
+	:stacking "overlay"
+	(player-trigger-icon))
+
+;; Stays open with the revealer collapsed, which is what keeps the slide
+;; animation. Shares the trigger's right edge so the panel hangs under the
+;; icon, growing leftwards under the empty stretch of bar.
+(defwindow player-panel
+	:geometry (geometry :x "-690px"
+						:y "64px"
+						:anchor "top right")
+	:wm-ignore true
+	:focusable false
+	:stacking "overlay"
+	(player-hover-panel))

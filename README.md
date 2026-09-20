@@ -21,6 +21,7 @@ Personal BSPWM setup with custom EWW widgets and hardware-friendly input configu
 - **Volume OSD**: 5% steps with mute state; auto-closes after 3 seconds.
 - **WiFi widget**: toggle radio, scan networks, connect/disconnect with `nmcli` + `rofi` password prompt.
 - **Spotify widget**: track metadata, playback controls, shuffle and repeat, driven over MPRIS with `playerctl`. Controls are shared with the media keys through `.config/sxhkd/scripts/spotify_control`, so both paths behave the same. The panel anchors to the top right, clearing the Polybar top bar by `4px`. Those offsets were measured with `xwininfo` against the running bar, not read from a config file — `config.ini` looks authoritative but `launch.sh` never loads it, so its numbers are wrong. **If you change the bar's height or margin, re-measure and update the offsets in `.config/eww/player/player.yuck`.** The panel opens on X's primary output, which is what the running bars follow. Album art is cached under `~/.cache/eww/player-art`, keyed by track id and capped at 100 covers (~6MB); it downloads in the background so the one-second poll never waits on the network, which means a cover appears about a second after the track changes. Deleting that directory is safe — it refills itself.
+- **Spotify hover trigger**: a Spotify icon sits in the bar's free gap and reveals the player panel on hover, sliding it down and hiding it when the pointer leaves. Its position comes from the measured gap between bar modules (`x 1078..1242`), so **re-measure with `xwininfo` if you change the bar's modules**. Hiding is deferred by a grace delay and then decided by where the pointer actually is: GTK fires leave events when the pointer crosses onto child widgets, and the icon and panel are separate windows, so cancelling by bookkeeping loses a race that checking the pointer does not. The panel window is closed rather than left collapsed, since eww does not shrink a toplevel back down and an invisible one would swallow clicks. Coexists with `super + ctrl + s`.
 - **Touchpad**: works like a laptop touchpad (tap-to-click, two-finger right click, three-finger middle click, natural scrolling, disable while typing).
 
 ## Requirements
@@ -34,6 +35,7 @@ Personal BSPWM setup with custom EWW widgets and hardware-friendly input configu
 - `nmcli` / NetworkManager (WiFi)
 - `playerctl` (Spotify control over MPRIS)
 - `jq` (builds the player state snapshot)
+- `xdotool` (the hover trigger checks the pointer's position before hiding)
 - `xinput` + `libinput` driver (touchpad runtime setup)
 
 ## Installation

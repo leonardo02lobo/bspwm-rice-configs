@@ -121,3 +121,14 @@
     }
   }
 }
+
+.player-trigger {
+  font-family: "JetBrainsMono Nerd Font", "Material Design Icons Desktop";
+  font-size: 1.1rem;
+  color: $green;
+  padding: 0 0.8rem;
+}
+
+.player-trigger:hover {
+  color: $fg;
+}

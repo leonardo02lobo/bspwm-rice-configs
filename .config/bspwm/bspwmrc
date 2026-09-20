@@ -31,6 +31,16 @@ start_daemons(){
   pidof -q eww || eww daemon &
   # Display Control widget daemon (config propia; si ya corre, sale solo)
   eww --config "${HOME}/Documentos/Project/display-manager/widget/eww" daemon &
+
+  # Icono de Spotify en el hueco de la barra. Espera a que el daemon acepte
+  # peticiones, con tope, porque a esta altura del arranque aún no está listo.
+  (
+    for _ in $(seq 20); do
+      eww -c "${HOME}/.config/eww" ping >/dev/null 2>&1 && break
+      sleep 0.5
+    done
+    eww -c "${HOME}/.config/eww" open player-trigger
+  ) &
  # pidof -q sxhkd > /dev/null || sxhkd &
 
   killall -q dunst
