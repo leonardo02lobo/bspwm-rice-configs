@@ -7,6 +7,7 @@
 # that is already closed.
 
 readonly PLAYER="spotify"
+readonly HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 pl() { playerctl -p "$PLAYER" "$@" 2>/dev/null; }
 
@@ -22,6 +23,7 @@ shuffle="Off"
 repeat="None"
 pos_secs=0
 len_secs=0
+art=""
 
 if [[ "$status" != "Offline" ]]; then
   title="$(pl metadata title)"
@@ -34,6 +36,11 @@ if [[ "$status" != "Offline" ]]; then
 
   len_us="$(pl metadata mpris:length)"
   len_secs=$(( $(num "${len_us%%.*}") / 1000000 ))
+
+  # One call for both fields; the helper returns immediately, downloading in
+  # the background on a miss, so this stays off the network path.
+  ids="$(pl metadata --format '{{mpris:trackid}}|{{mpris:artUrl}}')"
+  art="$("$HERE/get_album_art.sh" "${ids%%|*}" "${ids#*|}")"
 fi
 
 len_fmt="$(fmt "$len_secs")"
@@ -46,8 +53,9 @@ jq -cn \
   --arg  artist   "$artist" \
   --arg  shuffle  "${shuffle:-Off}" \
   --arg  repeat   "${repeat:-None}" \
+  --arg  art      "$art" \
   --argjson position "$pos_secs" \
   --argjson length   "$len_secs" \
   --arg  position_fmt "$(fmt "$pos_secs")" \
   --arg  length_fmt   "$len_fmt" \
-  '{$status, $title, $artist, $shuffle, $repeat, $position, $length, $position_fmt, $length_fmt}'
+  '{$status, $title, $artist, $shuffle, $repeat, $art, $position, $length, $position_fmt, $length_fmt}'

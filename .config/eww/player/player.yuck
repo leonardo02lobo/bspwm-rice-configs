@@ -43,6 +43,9 @@
 		:space-evenly false
 		(box
 			:class "player-art"
+			;; Empty path leaves the container on its flat background, which covers
+			;; downloading, no network and no player with a single branch.
+			:style {player.art != "" ? "background-image: url('file://${player.art}')" : ""}
 			(box
 				:class "player-info"
 				:space-evenly false
