@@ -1,0 +1,185 @@
+;; =============================================
+;; Spotify Player Widget
+;; =============================================
+
+;; One snapshot per tick: a single process instead of one per field, since
+;; defpoll keeps running while the window is closed.
+(defpoll player
+	:interval "1s"
+	:initial '{"status":"Offline","title":"","artist":"","shuffle":"Off","repeat":"None","position":0,"length":1,"position_fmt":"0:00","length_fmt":"0:00"}'
+	"~/.config/bspwm/scripts/player/get_player_state.sh")
+
+(defvar ctl "~/.config/sxhkd/scripts/spotify_control")
+
+;; Widgets ;;
+
+(defwidget shuffle [color action status]
+	(eventbox
+		:cursor "pointer"
+		(button
+			:onclick action
+			:style "color: ${color}"
+			:tooltip status
+			"󰒟"
+		)
+	)
+)
+
+(defwidget loop [icon color status action]
+	(eventbox
+		:cursor "pointer"
+		(button
+			:onclick action
+			:style "color: ${color}"
+			:tooltip status
+			icon
+		)
+	)
+)
+
+(defwidget player []
+	(box
+		:class "player"
+		:space-evenly false
+		(box
+			:class "player-art"
+			(box
+				:class "player-info"
+				:space-evenly false
+				:orientation "v"
+				:spacing 10
+				(box
+					:class "top-icons"
+					(box
+						:space-evenly false
+						:spacing 10
+						(shuffle
+							:action "${ctl} shuffle"
+							:color {player.shuffle == "On" ? "#81ae5f" : "#b8bfe5"}
+							:status "Aleatorio: ${player.shuffle}"
+						)
+						(loop
+							:action "${ctl} repeat"
+							:icon {player.repeat == "Track" ? "󰑘" : "󰑖"}
+							:color {player.repeat == "None" ? "#b8bfe5" : "#81ae5f"}
+							:status "Repetir: ${player.repeat}"
+						)
+					)
+					(box
+						(button
+							:class "spotify-icon"
+							:halign "end"
+							"󰓇"
+						)
+					)
+				)
+				(label
+					:class "player-title"
+					:halign "start"
+					:text {player.status == "Offline" ? "Sin reproductor activo" : player.title}
+					:limit-width 30
+					:wrap true
+					:xalign 0
+				)
+				(label
+					:class "player-artist"
+					:halign "start"
+					:text {player.status == "Offline" ? "" : player.artist}
+					:limit-width 35
+				)
+
+				(box
+					:space-evenly false
+					:orientation "v"
+					:valign "end"
+					:spacing 6
+					:vexpand true
+					(box
+						:class "player-bar"
+						(eventbox
+							:cursor "pointer"
+							(scale
+								:onchange "${ctl} seek-to {}"
+								:min 0
+								:max {player.length}
+								:value {player.position}
+								:active {player.status != "Offline"}
+							)
+						)
+					)
+					(box
+						:class "player-position"
+						:space-evenly false
+						:valign "end"
+						:spacing 3
+						(label
+							:class "player-time"
+							:text {player.position_fmt}
+						)
+						(label :class "player-time" :text "/")
+						(label
+							:class "player-time"
+							:text {player.length_fmt}
+						)
+					)
+				)
+			)
+		)
+		(box
+			:class "player-controls"
+			:orientation "v"
+			:valign "center"
+			:hexpand true
+			:space-evenly false
+			:spacing 20
+			(eventbox
+				:cursor "pointer"
+				(button
+					:class "player-previous"
+					:onclick "${ctl} previous"
+					"󰒮"
+				)
+			)
+			(eventbox
+				:cursor "pointer"
+				(button
+					:class "player-toggle"
+					:onclick "${ctl} playpause"
+					{player.status == "Playing" ? "󰏤" : player.status == "Paused" ? "󰐊" : "󰓛"}
+				)
+			)
+			(eventbox
+				:cursor "pointer"
+				(button
+					:class "player-next"
+					:onclick "${ctl} next"
+					"󰒭"
+				)
+			)
+			(eventbox
+				:cursor "pointer"
+				(button
+					:class "min"
+					:onclick "eww -c ~/.config/eww close music"
+					"󰅙"
+				)
+			)
+		)
+	)
+)
+
+;; Windows ;;
+
+;; Polybar's top bar (principal_bar, launched from current.ini) occupies y 12
+;; to 60 and is inset 7px from the screen edge, measured with xwininfo rather
+;; than read off a config file — config.ini looks authoritative but launch.sh
+;; never loads it. 64px clears the bar with 4px of air; absolute pixels,
+;; since the bar height does not scale with the output's resolution.
+(defwindow music
+	:geometry (geometry :x "-7px"
+						:y "64px"
+						:anchor "top right")
+	:wm-ignore true
+	:focusable true
+	:stacking "overlay"
+	(player))

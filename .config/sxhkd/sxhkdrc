@@ -20,26 +20,26 @@ super + Escape
 super + shift + XF86TouchpadOff
 	ctrl
 super + F11
-	dbus-send --print-reply --dest=org.mpris.MediaPlayer2.spotify /org/mpris/MediaPlayer2 org.mpris.MediaPlayer2.Player.Seek int64:8000000
+	~/.config/sxhkd/scripts/spotify_control seek-forward
 super + F10
-	dbus-send --print-reply --dest=org.mpris.MediaPlayer2.spotify /org/mpris/MediaPlayer2 org.mpris.MediaPlayer2.Player.Seek int64:-8000000
+	~/.config/sxhkd/scripts/spotify_control seek-backward
 super + Pause
-	dbus-send --print-reply --dest=org.mpris.MediaPlayer2.spotify /org/mpris/MediaPlayer2 org.freedesktop.DBus.Properties.Set string:org.mpris.MediaPlayer2.Player string:LoopStatus variant:string:"Playlist"
+	~/.config/sxhkd/scripts/spotify_control repeat Playlist
 
 super + Delete
-	dbus-send --print-reply --dest=org.mpris.MediaPlayer2.spotify /org/mpris/MediaPlayer2 org.freedesktop.DBus.Properties.Set string:org.mpris.MediaPlayer2.Player string:LoopStatus variant:string:"Track"
+	~/.config/sxhkd/scripts/spotify_control repeat Track
 
 XF86AudioPlay
 	~/.config/sxhkd/scripts/spotify_control playpause
 
 XF86AudioStop
-	~/.config/sxhkd/spotify_control stop
+	~/.config/sxhkd/scripts/spotify_control stop
 
 XF86AudioPrev
-	~/.config/sxhkd/spotify_control previous
+	~/.config/sxhkd/scripts/spotify_control previous
 
 XF86AudioNext
-	~/.config/sxhkd/spotify_control next
+	~/.config/sxhkd/scripts/spotify_control next
 
 XF86AudioLowerVolume
 	~/.config/bspwm/scripts/volume/volume_down.sh
@@ -52,6 +52,9 @@ XF86AudioMute
 
 super + ctrl + w
 	~/.config/bspwm/scripts/wifi/show_wifi_widget.sh
+
+super + ctrl + s
+	~/.config/bspwm/scripts/player/show_player_widget.sh
 
 F5
 	~/.config/bspwm/scripts/brightness/brightness_down.sh
@@ -214,3 +217,7 @@ super + q
 # Abrir Chrome en Incógnito
 super + shift + q
     google-chrome --incognito
+
+# display control widget (Auto Display Manager)
+super + p
+	display-widget toggle

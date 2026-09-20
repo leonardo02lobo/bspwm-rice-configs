@@ -2,15 +2,11 @@
 ;; Volume OSD Widget
 ;; =============================================
 
-(defpoll vol-level
-  :interval "500ms"
-  :initial "0"
-  "~/.config/bspwm/scripts/volume/get_volume.sh")
-
-(defpoll vol-muted
-  :interval "500ms"
-  :initial "no"
-  "~/.config/bspwm/scripts/volume/get_mute.sh")
+;; Valores empujados por los scripts de volumen mediante `eww update`
+;; (modelo push, no poll): el widget refleja el nivel exacto en el
+;; instante del cambio, sin lag de 500ms ni scripts girando en segundo plano.
+(defvar vol-level "0")
+(defvar vol-muted "no")
 
 (defwidget volume-osd []
   (box
