@@ -214,3 +214,7 @@ super + q
 # Abrir Chrome en Incógnito
 super + shift + q
     google-chrome --incognito
+
+# display control widget (Auto Display Manager)
+super + p
+	display-widget toggle

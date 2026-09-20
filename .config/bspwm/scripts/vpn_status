@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+readonly HELP="""
+Show vpn status [polybar module]
+Usage: vpn_status [PARAM]
+  --normal 
+  --polybar 
+"""
+GREEN="#1bbf3e"
+TEXT="#ffffff"
+OVERLAY0="#6C757D"
+
+
+IFACE=$(/usr/sbin/ifconfig | grep tun0 | awk '{print $1}' | tr -d ':')
+
+_polybar(){
+if [ "${IFACE}" = "tun0" ]; then
+    echo "%{F${GREEN}}󰆧 %{F${TEXT}}$(/usr/sbin/ifconfig tun0 | grep "inet " | awk '{print $2}')%{u-}"
+else
+    echo "%{F${OVERLAY0}}󱐝 %{F${TEXT}}Disconnected%{u-}"
+fi
+}
+
+_normal(){
+  if [ "$IFACE" == "tun0" ]; then 
+    IP="$(ip addr show "$IFACE" | awk '/inet / {print $2; exit}' | cut -d/ -f1)"
+
+    echo "$IP" 
+  fi 
+} 
+
+while [[ "${1}" ]]; do
+  case "${1}" in 
+    --polybar) _polybar; shift ;;
+    --normal) _normal; shift; ;;
+    --help) echo "${HELP}"; exit 0; shift ;;
+    *) _polybar; shift;; 
+  esac 
+done

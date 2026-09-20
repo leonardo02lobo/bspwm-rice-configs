@@ -1,0 +1,38 @@
+#!/bin/bash
+IFACE=$(ip addr show | awk '/inet .* brd/ {print $NF; exit}')
+
+readonly HELP="""
+Show ethernet status [polybar module]
+Usage: ethernet_status [PARAM]
+  --normal 
+  --polybar 
+"""
+GREEN="#1bbf3e"
+TEXT="#ffffff"
+RED="#e51d0b"
+
+_polybar(){
+  if [[ "${IFACE}" ]]; then
+    echo "%{F${GREEN}}󰈀 %{F${TEXT}}$(ip addr show "$IFACE" | awk '/inet / {print $2; exit}' | cut -d/ -f1)%{u-}"
+  else
+    echo "%{F${RED}}󰈂 %{F${TEXT}}Disconnected"
+  fi
+}
+
+_normal(){
+  IP="$(ip addr show "$IFACE" | awk '/inet / {print $2; exit}' | cut -d/ -f1)"
+
+  if [[ "${IP}" ]]; then 
+    echo "${IP}"
+  fi
+
+}
+
+while [[ "${1}" ]]; do
+  case "${1}" in 
+    --polybar) _polybar; shift ;;
+    --normal) _normal; shift; ;;
+    --help) echo "${HELP}"; exit 0; shift ;;
+    *) _polybar; shift;; 
+  esac 
+done
