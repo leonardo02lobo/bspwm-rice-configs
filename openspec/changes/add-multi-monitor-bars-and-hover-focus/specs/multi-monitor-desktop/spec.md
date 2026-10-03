@@ -41,6 +41,17 @@ Al conectar y activar un monitor externo con la sesión ya iniciada, el rice SHA
 - **WHEN** cambia la resolución o la posición de un monitor activo
 - **THEN** las barras y los triggers de Spotify se relanzan con la nueva geometría
 
+### Requirement: Posición del monitor externo
+El monitor externo SHALL quedar colocado inmediatamente a la derecha de `eDP` (su borde izquierdo en el borde derecho de `eDP`), de modo que el puntero pase de `eDP` al externo moviéndose hacia la derecha. El rice SHALL corregir la posición al arrancar y en cada conexión o cambio de geometría, y SHALL NOT volver a llamar a xrandr cuando el externo ya está en su sitio, para no generar eventos de geometría en bucle.
+
+#### Scenario: Reconectar con el externo en otra posición
+- **WHEN** el usuario activa `HDMI-A-0` con xrandr y X lo coloca a la izquierda de `eDP` o encima de él
+- **THEN** el externo queda reposicionado a la derecha de `eDP`, y sus barras y su trigger se colocan en la nueva posición
+
+#### Scenario: Externo ya en su sitio
+- **WHEN** se reconcilian los monitores y el externo ya está a la derecha de `eDP`
+- **THEN** no se ejecuta xrandr y no se dispara ninguna reconciliación adicional
+
 ### Requirement: Desconexión de un monitor en caliente
 Al desconectar o desactivar el monitor externo, sus escritorios y ventanas SHALL fusionarse en `eDP` (bspwm con `remove_unplugged_monitors` activado), sin que ninguna ventana quede en un monitor inaccesible, y las barras y el trigger de Spotify de ese monitor SHALL desaparecer.
 

@@ -32,7 +32,7 @@ eDP (primary)                              HDMI-A-0
 
 **Non-Goals:**
 - Más de un monitor externo a la vez. Un segundo externo recibe barras, pero el reparto de escritorios solo contempla uno (ver Open Questions).
-- Gestionar xrandr (posición, resolución, primary): sigue siendo manual. No se introduce autorandr.
+- Gestionar resolución y primary con xrandr: siguen siendo manuales, y no se introduce autorandr. La **posición** del externo sí se gestiona (decisión 8).
 - Adaptar por monitor los widgets eww de volumen, brillo, wifi, calendario y cheatsheet, ni las ventanas `kitty.window.float` con offsets fijos que lanzan algunos módulos de la barra. Siguen apareciendo donde aparecen hoy.
 - Tocar picom, sxhkd o el touchpad.
 
@@ -109,6 +109,15 @@ El usuario apaga el externo con `xrandr --off`, que bspwm trata como monitor dis
 2. **Implementar en `~/.config`** (es lo que se prueba en vivo) y, al terminar, volver a copiar al repo junto con los scripts nuevos de `bspwm/scripts/monitors/`.
 
 Antes del baseline se revisa que los archivos copiados no contengan secretos ni rutas personales sensibles. Se excluyen los `.backup` y las variantes de polybar no usadas (`config`, `config.ini`, `data.ini`, `modules.ini`, `colors_dark/light.ini`).
+
+### 8. El externo siempre a la derecha de `eDP`, corregido en la reconciliación
+
+*Añadida durante la implementación (2026-10-03).* Al probar el hotplug, xrandr dejó el externo en la posición que indicaba el último comando, y el usuario quiere llegar a él moviendo el ratón hacia la derecha. Sin `.xprofile` ni autorandr, nada recordaba la posición entre conexiones. `setup_monitors.sh` incorpora `place_external`, que se ejecuta antes de repartir los escritorios:
+
+- Compara los rectángulos de bspwm. Si el borde izquierdo del externo no coincide con el borde derecho de `eDP`, ejecuta `xrandr --output <externo> --right-of <laptop>` y espera (con tope de 2 s) a que bspwm refleje la nueva geometría antes de lanzar las barras.
+- **Guard anti-bucle**: el xrandr dispara un `monitor_geometry`, y el listener vuelve a reconciliar. En esa segunda pasada la posición ya cuadra, así que no se llama a xrandr y la cadena termina. El coste es un relanzamiento extra de polybar al corregir la posición, y solo entonces.
+
+*Alternativa descartada*: un `.xprofile` con el xrandr. Solo actúa al iniciar la sesión, no al reconectar el cable o reactivar el externo con `--auto`, que es justo cuando X lo coloca mal.
 
 ## Risks / Trade-offs
 

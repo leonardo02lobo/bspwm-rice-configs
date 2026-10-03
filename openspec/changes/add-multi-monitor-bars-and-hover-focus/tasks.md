@@ -42,8 +42,14 @@
 - [x] 6.4 En `setup_monitors.sh`, cerrar todos los `player-trigger-*` activos (`eww active-windows`) y abrir uno por monitor con `--id player-trigger-<mon> --screen <mon> --arg monitor=<mon>`
 - [x] 6.5 Verificar que el hover en el trigger de cada monitor despliega el panel en ese monitor y no en el otro, que pasar de un trigger al otro mueve el panel, y que al retirar el puntero el panel se colapsa y se cierra sin dejar una ventana fantasma que bloquee clicks
 
-## 7. Cierre
+## 7. Posición del externo (añadido durante la implementación)
 
-- [x] 7.1 Copiar al repo los archivos vivos modificados y los nuevos `bspwm/scripts/monitors/*`, y revisar el diff frente al baseline
-- [x] 7.2 Actualizar el README del repo con el soporte multi-monitor (reparto de escritorios, hotplug, foco por hover) y la limitación de un solo externo
-- [x] 7.3 Ejecutar `openspec validate add-multi-monitor-bars-and-hover-focus` y commitear
+- [x] 7.1 Añadir `place_external` a `setup_monitors.sh`: colocar el externo con `xrandr --right-of <laptop>` solo si no está ya a la derecha, esperando a que bspwm aplique la geometría
+- [x] 7.2 Verificar que, con el externo a la izquierda, la reconciliación lo mueve a la derecha y que el evento de geometría resultante no provoca un bucle (PIDs de polybar estables)
+- [x] 7.3 Verificar que reconectar con `xrandr --auto --left-of eDP` termina con el externo a la derecha, `VII..X` en él y 12 barras
+
+## 8. Cierre
+
+- [x] 8.1 Copiar al repo los archivos vivos modificados y los nuevos `bspwm/scripts/monitors/*`, y revisar el diff frente al baseline
+- [x] 8.2 Actualizar el README del repo con el soporte multi-monitor (reparto de escritorios, hotplug, foco por hover) y la limitación de un solo externo
+- [x] 8.3 Ejecutar `openspec validate add-multi-monitor-bars-and-hover-focus` y commitear

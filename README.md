@@ -22,7 +22,7 @@ Personal BSPWM setup with custom EWW widgets and hardware-friendly input configu
 - **Brightness OSD**: controlled via `light` with 5% steps; auto-closes after 3 seconds.
 - **Volume OSD**: 5% steps with mute state; auto-closes after 3 seconds.
 - **WiFi widget**: toggle radio, scan networks, connect/disconnect with `nmcli` + `rofi` password prompt.
-- **Multi-monitor**: every active monitor gets its own set of bars and Spotify trigger. The laptop panel (`eDP`) holds desktops `I..VI` and the external monitor `VII..X`, so `super + 1..0` reaches the external directly. Plugging, unplugging or toggling the external with `xrandr` reconfigures everything; on unplug its desktops and windows move to the laptop and return when it comes back. Only one external monitor is supported.
+- **Multi-monitor**: every active monitor gets its own set of bars and Spotify trigger. The laptop panel (`eDP`) holds desktops `I..VI` and the external monitor `VII..X`, so `super + 1..0` reaches the external directly. The external is always placed right of the laptop. Plugging, unplugging or toggling the external with `xrandr` reconfigures everything; on unplug its desktops and windows move to the laptop and return when it comes back. Only one external monitor is supported.
 - **Focus follows pointer**: the window under the mouse gets focus (clicking still focuses too).
 - **Touchpad**: works like a laptop touchpad (tap-to-click, two-finger right click, three-finger middle click, natural scrolling, disable while typing).
 
@@ -32,6 +32,7 @@ Personal BSPWM setup with custom EWW widgets and hardware-friendly input configu
 - EWW (ElKowar's Wacky Widgets) 0.6+
 - Polybar
 - `playerctl`, `xdotool`, `xwininfo` (Spotify widget)
+- `jq`, `xrandr` (monitor setup)
 - sxhkd
 - `light` (brightness)
 - `brightnessctl` (fallback)

@@ -2,7 +2,7 @@
 # Brings every connected monitor to its expected state:
 #
 #   laptop panel (eDP)    desktops I..VI
-#   external monitor      desktops VII..X
+#   external monitor      desktops VII..X, placed right of the laptop
 #   every monitor         its own polybar bars and Spotify trigger
 #
 # Called by bspwmrc at startup and by monitor_hotplug.sh on every monitor
@@ -88,6 +88,31 @@ reorder_desktops() {
   bspc monitor "${monitor}" -o "${ordered[@]}"
 }
 
+monitor_rect() {
+  bspc query -T -m "${1}" | jq -r '.rectangle | "\(.x) \(.width)"'
+}
+
+# The external sits right of the laptop, so the pointer reaches it moving
+# right. xrandr is only called when it is elsewhere: moving it fires a
+# monitor_geometry event that runs this script again, and this check is what
+# keeps that from looping.
+place_external() {
+  local laptop="${1}" external="${2}" lx lw ex _
+
+  read -r lx lw <<< "$(monitor_rect "${laptop}")"
+  read -r ex _ <<< "$(monitor_rect "${external}")"
+  (( ex == lx + lw )) && return
+
+  xrandr --output "${external}" --right-of "${laptop}"
+  # bspwm applies the new geometry asynchronously; wait for it, with a cap.
+  for _ in $(seq 20); do
+    read -r lx lw <<< "$(monitor_rect "${laptop}")"
+    read -r ex _ <<< "$(monitor_rect "${external}")"
+    (( ex == lx + lw )) && return
+    sleep 0.1
+  done
+}
+
 setup_desktops() {
   local monitors laptop external
 
@@ -101,6 +126,7 @@ setup_desktops() {
   drop_default_desktop "${laptop}"
 
   if [[ -n "${external}" ]]; then
+    place_external "${laptop}" "${external}"
     set_workspaces "${external}" "${EXTERNAL_RANGE[@]}"
     drop_default_desktop "${external}"
     reorder_desktops "${external}"
