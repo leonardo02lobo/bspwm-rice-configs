@@ -1,0 +1,31 @@
+#!/bin/sh
+
+ANCHO_PCT=18
+ALTO_PCT=46
+CLASE="kitty-float-fetch"
+
+MARGEN_X=20
+BAJADA_PX=75
+
+mon_geo=$(bspc query -T -m focused | jq -r '.rectangle | "\(.width) \(.height) \(.x) \(.y)"')
+
+SCREEN_WIDTH=$(echo "$mon_geo" | awk '{print $1}')
+SCREEN_HEIGHT=$(echo "$mon_geo" | awk '{print $2}')
+MONITOR_X=$(echo "$mon_geo" | awk '{print $3}')
+MONITOR_Y=$(echo "$mon_geo" | awk '{print $4}')
+
+WIDTH=$((SCREEN_WIDTH * ANCHO_PCT / 100))
+HEIGHT=$((SCREEN_HEIGHT * ALTO_PCT / 100))
+X_POS=$((MONITOR_X + MARGEN_X - 5))
+Y_POS=$((MONITOR_Y + BAJADA_PX))
+
+bspc rule -a "$CLASE" \
+    state=floating \
+    rectangle="${WIDTH}x${HEIGHT}+${X_POS}+${Y_POS}" \
+    --one-shot
+
+KITTY_PATH="/opt/kitty/bin/kitty"
+
+"${KITTY_PATH}" \
+  --class="$CLASE" \
+  -o remember_window_size=no -- ~/.config/bspwm/scripts/sysfetch >/dev/null 2>&1 &
