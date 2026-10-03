@@ -1,14 +1,20 @@
 #!/bin/bash
 # Applies the hover state of the Spotify trigger in the bar.
 #
-#   hover_player.sh show   reveal the panel
-#   hover_player.sh hide   collapse it after a grace delay, then close it
+#   hover_player.sh show [MONITOR]   reveal the panel on MONITOR
+#   hover_player.sh hide             collapse it after a grace delay, then close it
+#   hover_player.sh reset            close it at once and forget its state
 #
-# `show` is a no-op when the panel is already up, and that is load-bearing:
-# `eww open` on an open window destroys and recreates it, which fires a fresh
-# enter event under a stationary pointer and calls this script again. Without
-# the guard it looped about eighteen times a second while the pointer simply
-# rested on the panel.
+# Every monitor has its own trigger but there is a single panel, opened under
+# the trigger that fired. The state file holds the monitor it is open on, and
+# a `show` from another monitor's trigger moves the panel there. `reset` is for
+# setup_monitors.sh, which may close the panel's monitor out from under it.
+#
+# `show` is a no-op when the panel is already up on that monitor, and that is
+# load-bearing: `eww open` on an open window destroys and recreates it, which
+# fires a fresh enter event under a stationary pointer and calls this script
+# again. Without the guard it looped about eighteen times a second while the
+# pointer simply rested on the panel.
 #
 # The window is closed after collapsing rather than left open with the revealer
 # shut, because eww does not shrink the toplevel back down: an open-but-
@@ -43,9 +49,16 @@ pointer_over_player() {
 
 case "$1" in
   show)
-    [[ -f "$STATE" ]] && exit 0
-    : > "$STATE"
-    eww -c "$CONFIG" open player-panel 2>/dev/null
+    MONITOR="$2"
+    if [[ -f "$STATE" ]]; then
+      [[ "$(<"$STATE")" == "$MONITOR" ]] && exit 0
+      # Open under another monitor's trigger: collapse it there and reopen.
+      eww -c "$CONFIG" update player-hover=false
+      eww -c "$CONFIG" close player-panel 2>/dev/null
+    fi
+    printf '%s' "$MONITOR" > "$STATE"
+    eww -c "$CONFIG" open player-panel \
+      ${MONITOR:+--screen "$MONITOR" --arg monitor="$MONITOR"} 2>/dev/null
     sleep 0.05  # let the window realize collapsed, so the reveal animates
     eww -c "$CONFIG" update player-hover=true
     ;;
@@ -63,8 +76,14 @@ case "$1" in
     ) &
     ;;
 
+  reset)
+    rm -f "$STATE"
+    eww -c "$CONFIG" update player-hover=false
+    eww -c "$CONFIG" close player-panel 2>/dev/null
+    ;;
+
   *)
-    echo "Usage: ${0##*/} {show|hide}" >&2
+    echo "Usage: ${0##*/} {show [MONITOR]|hide|reset}" >&2
     exit 1
     ;;
 esac

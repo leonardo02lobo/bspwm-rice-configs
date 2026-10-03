@@ -34,15 +34,7 @@ start_daemons(){
   # Display Control widget daemon (config propia; si ya corre, sale solo)
   eww --config "${HOME}/Documentos/Project/display-manager/widget/eww" daemon &
 
-  # Icono de Spotify en el hueco de la barra. Espera a que el daemon acepte
-  # peticiones, con tope, porque a esta altura del arranque aún no está listo.
-  (
-    for _ in $(seq 20); do
-      eww -c "${HOME}/.config/eww" ping >/dev/null 2>&1 && break
-      sleep 0.5
-    done
-    eww -c "${HOME}/.config/eww" open player-trigger
-  ) &
+  # El icono de Spotify de cada barra lo abre setup_monitors.sh (sección POLYBAR).
  # pidof -q sxhkd > /dev/null || sxhkd &
 
   killall -q dunst
@@ -123,28 +115,9 @@ bspc rule -a "Toplevel" state=floating 2 > "$ERROR_LOG"
 # ░█▄█░█░█░█▀▄░█▀▄░▀▀█░█▀▀░█▀█░█░░░█▀▀░▀▀█
 # ░▀░▀░▀▀▀░▀░▀░▀░▀░▀▀▀░▀░░░▀░▀░▀▀▀░▀▀▀░▀▀▀
 
-set_workspaces(){
-  # sudo apt install libroman-perl 
-  # :)
-  workspaces="${1}"
-
-  # 2) Asegurar que sea un entero positivo
-  if ! [[ "$1" =~ ^[1-9][0-9]*$ ]]; then
-    bspc monitor -d  I II III IV VI VII VII VIII IX X
-    echo "Error: '${workspaces}' no es un número válido." >&2
-    return 1 
-  fi
-
-  count="${1}"
-
-  romans=()
-  for (( i=1; i<=count; i++ )); do
-    romans+=( "$(perl -MRoman -le "print Roman($i)")" )
-  done
-
-  /usr/bin/bspc monitor -d "${romans[@]}"
-} 
-set_workspaces 6 2>"${ERROR_LOG}" 
+# Por monitor: eDP -> I..VI, externo -> VII..X. Los reparte set_workspaces en
+# scripts/monitors/setup_monitors.sh, que se lanza en la sección POLYBAR y en
+# cada conexión/desconexión de monitor.
 
 # ░█▀▀░█▀█░█▀█░█▀▀░▀█▀░█▀▀░█░█░█▀▄░█▀█░▀█▀░▀█▀░█▀█░█▀█░█▀▀
 # ░█░░░█░█░█░█░█▀▀░░█░░█░█░█░█░█▀▄░█▀█░░█░░░█░░█░█░█░█░▀▀█
@@ -172,13 +145,21 @@ bspc config gapless_monocle      true
 bspc config focused_border_color "${focused_color}"
 bspc config normal_border_color "${normal_color}"
 bspc config border_width 2
-bspc config focus_follows_pointer false
+bspc config focus_follows_pointer true
+
+# Al desenchufar o apagar (xrandr --off) un monitor, sus escritorios y ventanas
+# pasan al que queda en vez de quedarse en un monitor fantasma inaccesible.
+bspc config remove_unplugged_monitors true
+bspc config remove_disabled_monitors  true
 
 # ░█▀█░█▀█░█░░░█░█░█▀▄░█▀█░█▀▄
 # ░█▀▀░█░█░█░░░░█░░█▀▄░█▀█░█▀▄
 # ░▀░░░▀▀▀░▀▀▀░░▀░░▀▀░░▀░▀░▀░▀ 
  
-{ ~/.config/polybar/./launch.sh & } 2>"${ERROR_LOG}"
+# Escritorios, barras y trigger de Spotify en cada monitor conectado, y el
+# listener que lo repite al conectar, desconectar o cambiar un monitor.
+{ ~/.config/bspwm/scripts/monitors/setup_monitors.sh & } 2>"${ERROR_LOG}"
+{ ~/.config/bspwm/scripts/monitors/monitor_hotplug.sh & } 2>"${ERROR_LOG}"
 
 # ░█▀▄░▀█▀░█▀▀░█▀▀░█▀▀
 # ░█▀▄░░█░░█░░░█▀▀░▀▀█

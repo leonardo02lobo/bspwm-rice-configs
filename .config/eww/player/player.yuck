@@ -199,16 +199,19 @@
 ;; the primary_bar module. Both windows listen for hover and share one pending
 ;; hide, so crossing the ~27px of bare screen between them cancels the hide
 ;; armed by leaving the icon.
-(defwidget player-trigger-icon []
+;;
+;; There is one trigger per monitor but a single panel. `monitor` tells the
+;; hover script which screen to open the panel on, under that trigger.
+(defwidget player-trigger-icon [monitor]
 	(eventbox
 		:cursor "pointer"
-		:onhover "${hover} show"
+		:onhover "${hover} show ${monitor}"
 		:onhoverlost "${hover} hide"
 		(label :class "player-trigger" :text "󰓇")))
 
-(defwidget player-hover-panel []
+(defwidget player-hover-panel [monitor]
 	(eventbox
-		:onhover "${hover} show"
+		:onhover "${hover} show ${monitor}"
 		:onhoverlost "${hover} hide"
 		(revealer
 			:transition "slidedown"
@@ -218,23 +221,25 @@
 
 ;; Sits in the bar's free gap, measured with xwininfo: modules occupy up to
 ;; x 1078 and resume at x 1242, so a right edge at x 1230 lands inside it.
-(defwindow player-trigger
+;; Every monitor's principal_bar has the same layout, so the offset holds on
+;; all of them; setup_monitors.sh opens one per monitor with --screen.
+(defwindow player-trigger [?monitor]
 	:geometry (geometry :x "-690px"
 						:y "19px"
 						:anchor "top right")
 	:wm-ignore true
 	:focusable false
 	:stacking "overlay"
-	(player-trigger-icon))
+	(player-trigger-icon :monitor {monitor ?: ""}))
 
 ;; Stays open with the revealer collapsed, which is what keeps the slide
 ;; animation. Shares the trigger's right edge so the panel hangs under the
 ;; icon, growing leftwards under the empty stretch of bar.
-(defwindow player-panel
+(defwindow player-panel [?monitor]
 	:geometry (geometry :x "-690px"
 						:y "64px"
 						:anchor "top right")
 	:wm-ignore true
 	:focusable false
 	:stacking "overlay"
-	(player-hover-panel))
+	(player-hover-panel :monitor {monitor ?: ""}))

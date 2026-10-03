@@ -23,26 +23,38 @@ trap '' HUP
 #polybar ethernet_status -c ~/.config/polybar/current.ini &
 #polybar vpn_status -c ~/.config/polybar/current.ini & 
 
-# ░█░█░█▀█░█▀▄░█░█░█▀▀░█▀█░█▀█░█▀▀░█▀▀░█▀▀
-# ░█▄█░█░█░█▀▄░█▀▄░▀▀█░█▀▀░█▀█░█░░░█▀▀░▀▀█
-# ░▀░▀░▀▀▀░▀░▀░▀░▀░▀▀▀░▀░░░▀░▀░▀▀▀░▀▀▀░▀▀▀
-polybar primary -c ~/.config/polybar/workspace.ini &
-disown
+# One instance of every bar per connected monitor. Each bar inherits
+# `monitor = ${env:MONITOR:}` from bar/main, so MONITOR picks its output.
+launch_bars() {
+  export MONITOR="${1}"
 
-# ░█░░░█▀▀░█▀▀░▀█▀░░░█▀▄░█▀█░█▀▄
-# ░█░░░█▀▀░█▀▀░░█░░░░█▀▄░█▀█░█▀▄
-# ░▀▀▀░▀▀▀░▀░░░░▀░░░░▀▀░░▀░▀░▀░▀
-polybar updates -c ~/.config/polybar/current.ini &
-disown
-polybar date -c ~/.config/polybar/current.ini &
-disown
-polybar target_to_hack -c ~/.config/polybar/current.ini &
-disown
-polybar primary -c ~/.config/polybar/current.ini &
-disown
+  # ░█░█░█▀█░█▀▄░█░█░█▀▀░█▀█░█▀█░█▀▀░█▀▀░█▀▀
+  # ░█▄█░█░█░█▀▄░█▀▄░▀▀█░█▀▀░█▀█░█░░░█▀▀░▀▀█
+  # ░▀░▀░▀▀▀░▀░▀░▀░▀░▀▀▀░▀░░░▀░▀░▀▀▀░▀▀▀░▀▀▀
+  polybar primary -c ~/.config/polybar/workspace.ini &
+  disown
 
-# ░█▀▀░█▀█░█▀█░▀█▀░█▀█░▀█▀░█▀█░█▀▀░█▀▄░░░█▀▀░█▀▄░█▀█░█▄█░█▀▀
-# ░█░░░█░█░█░█░░█░░█▀█░░█░░█░█░█▀▀░█▀▄░░░█▀▀░█▀▄░█▀█░█░█░█▀▀
-# ░▀▀▀░▀▀▀░▀░▀░░▀░░▀░▀░▀▀▀░▀░▀░▀▀▀░▀░▀░░░▀░░░▀░▀░▀░▀░▀░▀░▀▀▀
-polybar principal_bar -c ~/.config/polybar/current.ini &  
-disown
+  # ░█░░░█▀▀░█▀▀░▀█▀░░░█▀▄░█▀█░█▀▄
+  # ░█░░░█▀▀░█▀▀░░█░░░░█▀▄░█▀█░█▀▄
+  # ░▀▀▀░▀▀▀░▀░░░░▀░░░░▀▀░░▀░▀░▀░▀
+  polybar updates -c ~/.config/polybar/current.ini &
+  disown
+  polybar date -c ~/.config/polybar/current.ini &
+  disown
+  polybar target_to_hack -c ~/.config/polybar/current.ini &
+  disown
+  polybar primary -c ~/.config/polybar/current.ini &
+  disown
+
+  # ░█▀▀░█▀█░█▀█░▀█▀░█▀█░▀█▀░█▀█░█▀▀░█▀▄░░░█▀▀░█▀▄░█▀█░█▄█░█▀▀
+  # ░█░░░█░█░█░█░░█░░█▀█░░█░░█░█░█▀▀░█▀▄░░░█▀▀░█▀▄░█▀█░█░█░█▀▀
+  # ░▀▀▀░▀▀▀░▀░▀░░▀░░▀░▀░▀▀▀░▀░▀░▀▀▀░▀░▀░░░▀░░░▀░▀░▀░▀░▀░▀░▀▀▀
+  polybar principal_bar -c ~/.config/polybar/current.ini &
+  disown
+}
+
+# `--list-monitors` only lists active outputs, so a connected but
+# disabled monitor (xrandr --off) gets no bars.
+for monitor in $(polybar --list-monitors | cut -d: -f1); do
+  launch_bars "${monitor}"
+done
