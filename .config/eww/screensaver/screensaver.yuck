@@ -1,0 +1,57 @@
+;; =============================================
+;; Idle screen
+;; =============================================
+;;
+;; Decoration only. It never protects the session: eww windows hold no
+;; keyboard grab and can be closed. The lock comes after it and always wins.
+;;
+;; Reuses the `player` snapshot defined in player/player.yuck, so showing what
+;; is playing costs no extra polling.
+
+(defpoll ss-clock :interval "10s" :initial "" "date +%H:%M")
+(defpoll ss-date  :interval "5m"  :initial "" "date '+%A %d de %B'")
+
+(defwidget screensaver []
+	(box
+		:class "screensaver"
+		:orientation "v"
+		:space-evenly false
+		:valign "center"
+		:halign "center"
+		:spacing 24
+		(label :class "ss-clock" :text ss-clock)
+		(label :class "ss-date"  :text ss-date)
+		(box
+			:visible {player.status != "Offline"}
+			:class "ss-track"
+			:orientation "h"
+			:space-evenly false
+			:spacing 20
+			:halign "center"
+			(box
+				:class "ss-art"
+				:visible {player.art != ""}
+				:style {player.art != "" ? "background-image: url('file://${player.art}')" : ""}
+			)
+			(box
+				:orientation "v"
+				:space-evenly false
+				:valign "center"
+				:spacing 6
+				(label :class "ss-title"  :text {player.title}  :limit-width 40 :xalign 0 :halign "start")
+				(label :class "ss-artist" :text {player.artist} :limit-width 40 :xalign 0 :halign "start")
+			)
+		)
+	)
+)
+
+;; One definition, opened once per connected output with `--id` and `--screen`
+;; from screensaver.sh. Fullscreen and transient: it exists only while idle.
+(defwindow screensaver
+	:geometry (geometry :width "100%"
+						:height "100%"
+						:anchor "center")
+	:wm-ignore true
+	:focusable false
+	:stacking "overlay"
+	(screensaver))

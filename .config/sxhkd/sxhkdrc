@@ -56,6 +56,14 @@ super + ctrl + w
 super + ctrl + s
 	~/.config/bspwm/scripts/player/show_player_widget.sh
 
+# bloquear la sesion de inmediato
+super + shift + Escape
+	~/.config/bspwm/scripts/idle/lock.sh
+
+# suspender el bloqueo automatico (ver algo sin tocar el teclado)
+super + ctrl + i
+	~/.config/bspwm/scripts/idle/inhibit.sh toggle
+
 F5
 	~/.config/bspwm/scripts/brightness/brightness_down.sh
 

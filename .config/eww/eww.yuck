@@ -2,6 +2,7 @@
 (include "calendar/calendar.yuck")
 (include "profilecard/profilecard.yuck")
 (include "player/player.yuck")
+(include "screensaver/screensaver.yuck")
 (include "volume/volume.yuck")
 (include "brightness/brightness.yuck")
 (include "wifi/wifi.yuck")
