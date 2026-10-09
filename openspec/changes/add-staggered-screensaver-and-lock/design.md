@@ -35,23 +35,32 @@ El rice ya resuelve lo multi-monitor con `setup_monitors.sh` (reconciliación id
 
 ## Decisions
 
-### 1. `xss-lock` como detector, no `xautolock` ni un bucle propio
+### 1. El detector es propio, porque X no dispara nada por inactividad
 
-**Por qué:** `xss-lock` escucha el temporizador de X *y* las señales de systemd-logind. Eso significa que el bloqueo aparece **antes de dormir**, así que `super + F12` y el cierre de tapa quedan cubiertos sin tocar `logind.conf` ni añadir atajos nuevos. Con `xautolock` habría que cablear la suspensión aparte, y con un bucle propio sobre `xprintidle` habría que reimplementar ambas cosas.
+Un watcher propio sondea el contador de inactividad y gobierna las tres etapas. `xss-lock` se queda, pero reducido a `--ignore-xss`: solo la mitad de logind.
 
-**Coste asumido:** una dependencia nueva, de 0.4.0 y en los repos oficiales.
+**Por qué:** medido en esta máquina, **el salvapantallas de X nunca se autoactiva**. Con `xset s 10 5` y 103 segundos de inactividad acumulada, el estado seguía en `Off` y `til_or_since` clavado en `0.0`. No es que algo reinicie el contador —sube limpio, +2s cada 2s—: la cuenta atrás llega a cero y la activación simplemente no ocurre. El mecanismo en sí responde (`xset s activate` lo pone en `On`, y `xset s reset` rearma la cuenta en 9.4s), pero solo a mano.
 
-### 2. El escalonado sale del notificador de `xss-lock`, y sus tiempos se miden
+**Y DPMS tampoco.** Con los tres tiempos a 15 segundos y 103 de inactividad, el panel seguía encendido. La premisa original —"DPMS ya apaga la pantalla a los 10 minutos"— salía de leer `xset q`, no de observarlo, y es falsa.
 
-`xss-lock` admite un *notificador* que corre al activarse el salvapantallas de X y que muere cuando arranca el bloqueador o cuando vuelve la actividad. Ese es exactamente el mecanismo del escalonado: notificador = capa decorativa, bloqueador = `i3lock`.
+**Qué sí es fiable:** el contador de inactividad de la extensión ScreenSaver. Todo se construye sobre él, y el apagado del panel se fuerza con `xset dpms force off` en lugar de programarse.
+
+**Consecuencia:** `xss-lock` conserva su razón de ser —bloquear antes de dormir, cubriendo `super + F12` y la tapa, con su sesión de logind correctamente detectada— pero deja de ser el detector de inactividad.
+
+### 2. El escalonado lo lleva el watcher, no un notificador
+
+El watcher compara la inactividad contra tres umbrales y actúa: lanza la pantalla de reposo, la mata y lanza el bloqueo, y fuerza el apagado del panel.
 
 ```
- 0 ────────── 5 min ─────────── 10 min ────────── 15 min
- actividad    notificador        bloqueador        DPMS off
-              (eww, decorativa)  (i3lock)
+ idle 5 min → pantalla de reposo      idle 10 min → mata el reposo y bloquea
+ idle 15 min → xset dpms force off    actividad   → mata el reposo
 ```
 
-**Lo que hay que medir:** cómo se traduce `xset s <timeout> <cycle>` en el instante del notificador y el del bloqueador. La documentación admite más de una lectura y ya nos ha pasado dar por buenos valores de un archivo que nadie cargaba. Se fija con un cronómetro antes de dejar los tiempos definitivos.
+**Por qué no el notificador de `xss-lock`:** era el mecanismo elegido, y depende de que el salvapantallas de X se active, que es justo lo que no pasa.
+
+**Lo que no cambió:** la pantalla de reposo sigue muriendo por `SIGTERM`, ahora enviado por el watcher. La trampa que ya tenía sirve igual.
+
+**Verificado con umbrales cortos:** a los 8s de inactividad aparecieron las dos ventanas de reposo, una por monitor, y a los 20s se cerraron las dos y entró el bloqueador, sin solaparse.
 
 ### 3. La capa decorativa nunca es la que protege
 
@@ -83,11 +92,13 @@ El notificador recibe `SIGTERM` cuando vuelve la actividad o cuando arranca el b
 
 Un atajo alterna la inhibición apagando y encendiendo el temporizador de X, con un indicador en la barra.
 
-**Por qué no algo automático:** las aplicaciones piden no bloquear por dos vías distintas. `mpv` usa la extensión de X directamente y **ya queda cubierto**: suspende el temporizador por su cuenta. Los navegadores llaman a `org.freedesktop.ScreenSaver`, un nombre de D-Bus que **hoy no tiene dueño**, así que su petición no llega a nadie. Darle dueño significa escribir y mantener un servicio D-Bus, que es un proyecto aparte y no lo que se pidió.
+**Por qué no algo automático:** las aplicaciones piden no bloquear por dos vías, y aquí no sirve ninguna. Los navegadores llaman a `org.freedesktop.ScreenSaver`, un nombre de D-Bus que **no tiene dueño** en esta máquina, así que su petición no llega a nadie. `mpv` suspende el salvapantallas de X por su cuenta, pero **este servidor no lo refleja**: se intentó leer el estado de la extensión durante una suspensión real y siguió reportando `Off`, mientras el contador de inactividad subía igual. Como el watcher se guía por ese contador, un vídeo no lo detiene.
+
+**Consecuencia de la revisión:** cuando el detector era el temporizador de X, `mpv` quedaba cubierto gratis. Al cambiar de detector esa cobertura se perdió, así que el atajo manual pasa de ser la salida para los navegadores a serlo para cualquier vídeo.
 
 **Alternativa considerada:** dejar que `xfce4-screensaver` haga de dueño. Se descarta por la decisión 8.
 
-**Consecuencia asumida y documentada:** ver vídeo en el navegador sin tocar nada acabará en bloqueo salvo que se pulse el atajo.
+**Consecuencia asumida y documentada:** ver vídeo sin tocar el teclado acabará en bloqueo, en el navegador o en `mpv`, salvo que se pulse el atajo.
 
 ### 8. `xfce4-screensaver` se desactiva
 
@@ -104,7 +115,8 @@ Los tiempos quedan 5 / 10 / 15: decorativo, bloqueo, apagado.
 ## Risks / Trade-offs
 
 - **Quedarte fuera por un bloqueador mal configurado** → se prueba primero el atajo de bloqueo manual, con una sesión abierta en otro TTY como salida de emergencia, antes de enganchar nada automático.
-- **Los tiempos de `xss-lock` no son los que uno supone** → se miden con cronómetro (decisión 2) antes de fijarlos.
+- **Medir en vez de suponer fue lo que salvó esto** → la propuesta daba por buenos el salvapantallas y el DPMS de X; ninguno de los dos funciona aquí, y se descubrió cronometrando.
+- **El watcher sondea cada 5s**, así que el bloqueo puede llegar hasta 5s tarde → irrelevante frente a umbrales de minutos.
 - **Ventanas decorativas colgadas** → trampa de `SIGTERM` (decisión 5), verificada provocando el reposo y volviendo.
 - **Vídeo en navegador interrumpido por el bloqueo** → hueco conocido y documentado, con atajo manual como salida (decisión 7).
 - **El indicador de inhibición vive en Polybar, fuera del repo** → igual que el resto de Polybar, se documenta como paso manual.

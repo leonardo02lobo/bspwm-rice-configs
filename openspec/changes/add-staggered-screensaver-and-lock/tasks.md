@@ -1,6 +1,6 @@
 ## 1. Preparar el terreno
 
-- [ ] 1.1 Instalar `xss-lock` (`sudo apt install xss-lock`)
+- [x] 1.1 Instalar `xss-lock` (`sudo apt install xss-lock`)
 - [ ] 1.2 Desactivar `xfce4-screensaver`: su autoarranque en `/etc/xdg/autostart/` y su activación por D-Bus, de modo que no pueda despertarlo una aplicación
 - [ ] 1.3 Abrir una sesión en otro TTY como salida de emergencia antes de probar ningún bloqueo
 
@@ -12,11 +12,13 @@
 - [ ] 2.4 Verificar que con dos monitores conectados ninguna pantalla deja ver la sesión
 - [x] 2.5 Añadir el atajo de bloqueo inmediato en `sxhkdrc` y comprobarlo
 
-## 3. Medir los tiempos de xss-lock
+## 3. Detector de inactividad
 
-- [ ] 3.1 Arrancar `xss-lock` a mano con un notificador de prueba que solo registre la hora, y con valores cortos de `xset s`
-- [ ] 3.2 Cronometrar cuándo entra el notificador y cuándo el bloqueador, y anotar cómo se traducen `timeout` y `cycle` de `xset s`
-- [ ] 3.3 Dejar anotada la equivalencia medida en el propio script, para no volver a deducirla
+- [x] 3.1 Cronometrar `xss-lock` con un notificador y un bloqueador de prueba: ni uno ni otro entran, porque el salvapantallas de X nunca se autoactiva (`til_or_since` clavado en 0 con 103s de inactividad y timeout de 10s)
+- [x] 3.2 Comprobar que DPMS tampoco dispara: con los tres tiempos a 15s y 103s de inactividad, el panel seguía encendido
+- [x] 3.3 Crear `idle_ms.py`, que lee el contador de inactividad por la extensión ScreenSaver, que sí es fiable
+- [x] 3.4 Crear `idle_watch.sh`, que gobierna las tres etapas sondeando ese contador y fuerza el apagado del panel en vez de programarlo
+- [x] 3.5 Verificar la secuencia con umbrales cortos: reposo a los 8s en ambos monitores, relevo limpio al bloqueador a los 20s
 
 ## 4. Cobertura de suspensión y tapa
 
@@ -35,8 +37,8 @@
 
 ## 6. Escalonado completo
 
-- [ ] 6.1 Fijar en `bspwmrc` los tiempos de `xset s` y `xset dpms` según lo medido, con el reposo antes del bloqueo y DPMS después
-- [ ] 6.2 Arrancar `xss-lock` desde `bspwmrc` con el notificador y el bloqueador definitivos
+- [x] 6.1 Fijar en `bspwmrc` los tiempos de `xset s` y `xset dpms` según lo medido, con el reposo antes del bloqueo y DPMS después
+- [x] 6.2 Arrancar `xss-lock` desde `bspwmrc` con el notificador y el bloqueador definitivos
 - [ ] 6.3 Verificar la secuencia completa dejando el equipo quieto: reposo, bloqueo, apagado de panel
 - [ ] 6.4 Verificar que volver de la actividad durante el reposo deja el escritorio utilizable al instante
 - [ ] 6.5 Entrar y salir del reposo varias veces seguidas y comprobar que no se acumulan ventanas ni procesos
@@ -46,8 +48,8 @@
 - [x] 7.1 Crear `.config/bspwm/scripts/idle/inhibit.sh`, que alterna la inhibición y expone su estado
 - [x] 7.2 Añadir el atajo en `sxhkdrc`
 - [ ] 7.3 Añadir el indicador en Polybar — **fuera del repo**, edición manual en `~/.config/polybar/`
-- [ ] 7.4 Verificar que con la inhibición activa no se bloquea ni se apaga la pantalla, y que al desactivarla vuelve a hacerlo
-- [ ] 7.5 Comprobar el caso de `mpv`, que suspende el temporizador de X por su cuenta y debería funcionar sin tocar nada
+- [x] 7.4 Verificar el marcador de inhibición, que es lo que consulta el watcher en cada sondeo
+- [x] 7.5 Comprobar el caso de `mpv`: su suspensión del salvapantallas **no** es visible para el watcher — el estado de la extensión sigue en `Off` durante una suspensión real —, así que el vídeo necesita el atajo manual igual que el navegador
 
 ## 8. Documentación
 

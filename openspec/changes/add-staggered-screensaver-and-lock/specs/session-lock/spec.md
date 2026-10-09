@@ -64,7 +64,7 @@ SHALL existir un atajo que suspenda el bloqueo automático mientras esté activo
 - **THEN** el bloqueo automático vuelve a estar operativo
 
 ### Requirement: El apagado de pantalla llega después del bloqueo
-El apagado del panel por DPMS SHALL ocurrir después de que la sesión esté bloqueada, nunca antes.
+El apagado del panel SHALL ocurrir después de que la sesión esté bloqueada, nunca antes, y SHALL forzarse explícitamente en lugar de programarse con los temporizadores de DPMS, que en esta máquina no disparan.
 
 #### Scenario: Secuencia de inactividad completa
 - **WHEN** el equipo queda inactivo hasta agotar todos los tramos

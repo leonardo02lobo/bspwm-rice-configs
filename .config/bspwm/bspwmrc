@@ -37,6 +37,12 @@ start_daemons(){
   # El icono de Spotify de cada barra lo abre setup_monitors.sh (sección POLYBAR).
  # pidof -q sxhkd > /dev/null || sxhkd &
 
+  # Inactividad: el watcher propio gobierna las tres etapas, porque los
+  # temporizadores de X aqui no disparan nunca (medido). xss-lock se queda
+  # solo con la mitad de logind, que si funciona: bloquear antes de dormir.
+  pgrep -x xss-lock >/dev/null || xss-lock --ignore-xss -- "${HOME}/.config/bspwm/scripts/idle/lock.sh" &
+  pgrep -f idle_watch.sh >/dev/null || "${HOME}/.config/bspwm/scripts/idle/idle_watch.sh" &
+
   killall -q dunst
   wait 2>/dev/null
   dunst &
