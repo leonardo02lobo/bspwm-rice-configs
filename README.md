@@ -77,9 +77,15 @@ Personal BSPWM setup with custom EWW widgets and hardware-friendly input configu
 
 5. Restart your BSPWM / Xorg session.
 
-> **Note**: two steps live outside this repository and have to be done by hand:
-> disabling `xfce4-screensaver` (its autostart entry in `/etc/xdg/autostart/`
-> and its D-Bus activation), and adding the inhibition indicator to Polybar.
+> **Note**: `xfce4-screensaver` is shut down from three directions, all at user
+> level so none of it needs root: `.config/autostart/xfce4-screensaver.desktop`
+> (in this repo) shadows the system autostart entry with `Hidden=true`;
+> `~/.local/share/dbus-1/services/org.xfce.ScreenSaver.service` shadows the
+> activatable service with `Exec=/bin/true`, since user service files win over
+> `/usr/share`; and its generated systemd user unit is masked with
+> `systemctl --user mask 'app-xfce4\x2dscreensaver@autostart.service'`. The last
+> two live outside `.config` and have to be redone by hand on a new machine, as
+> does the inhibition indicator in Polybar.
 >
 > **Note**: `~/.config/polybar/` is not tracked in this repository, so changes
 > there are manual and unversioned. Be aware that `config.ini` is dead weight:

@@ -1,7 +1,7 @@
 ## 1. Preparar el terreno
 
 - [x] 1.1 Instalar `xss-lock` (`sudo apt install xss-lock`)
-- [ ] 1.2 Desactivar `xfce4-screensaver`: su autoarranque en `/etc/xdg/autostart/` y su activación por D-Bus, de modo que no pueda despertarlo una aplicación
+- [x] 1.2 Desactivar `xfce4-screensaver` por sus tres vías, todas a nivel de usuario y sin root: sombra del autoarranque XDG con `Hidden=true`, sombra del servicio D-Bus con `Exec=/bin/true`, y máscara de la unidad de usuario generada. Verificado: un `Ping` a `org.xfce.ScreenSaver` ya no lo levanta
 - [ ] 1.3 Abrir una sesión en otro TTY como salida de emergencia antes de probar ningún bloqueo
 
 ## 2. Bloqueo, antes de automatizar nada

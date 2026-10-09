@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+Name=Screensaver
+Comment=Shadows /etc/xdg/autostart/xfce4-screensaver.desktop. This rice locks the session itself, and two lockers fighting over the keyboard grab is worse than none, because you believe you are protected.
+Exec=/bin/true
+Hidden=true
+X-GNOME-Autostart-enabled=false
