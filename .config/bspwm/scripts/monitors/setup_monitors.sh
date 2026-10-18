@@ -13,14 +13,10 @@
 # Desktops are matched by name, so after an unplug (bspwm merges VII..X into
 # the laptop) the next run moves them back to the external, windows included.
 
-# timeout bounds an IPC request that never gets an answer: without it the call
-# waits forever and the script never reaches the rest.
-#
-# It does NOT cover the other failure, measured on eww 0.6.0: a client that
-# cannot forward its command turns itself into a daemon and detaches (ppid 1).
-# It exits successfully, so timeout has nothing left to kill, and a second
-# daemon is left fighting over the socket. That one is still open.
-EWW=(timeout 5s eww -c "${HOME}/.config/eww")
+# Every eww call goes through eww_call.sh: it starts the daemon when it is not
+# up, bounds the call with a timeout, and keeps a failed `open` from forking
+# into a second daemon.
+EWW=("${HOME}/.config/bspwm/scripts/lib/eww_call.sh")
 HOVER="${HOME}/.config/bspwm/scripts/player/hover_player.sh"
 LOCK="${XDG_RUNTIME_DIR:-/tmp}/bspwm_setup_monitors.lock"
 
@@ -148,14 +144,10 @@ setup_desktops() {
 setup_player_triggers() {
   local monitor id
 
-  # The daemon is not accepting requests yet this early in the session. The
-  # wait is capped on the clock, not on a number of tries: each ping now has
-  # its own timeout, so counting tries would multiply the two.
-  SECONDS=0
-  while (( SECONDS < 10 )); do
-    "${EWW[@]}" ping >/dev/null 2>&1 && break
-    sleep 0.5
-  done
+  # The daemon is not accepting requests yet this early in the session;
+  # eww_call.sh starts it and waits, so the retry loop this used to need is
+  # gone.
+  "${EWW[@]}" ping >/dev/null 2>&1
 
   "${HOVER}" reset
 

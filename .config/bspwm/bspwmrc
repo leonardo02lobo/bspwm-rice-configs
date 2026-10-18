@@ -28,11 +28,9 @@ start_daemons(){
  # killall sxhkd 
   killall polybar
   pidof -q picom || picom &
-  # Daemon principal: comprobar ESTE daemon (ping), no cualquier proceso eww,
-  # o el de display-manager lo tapa y los `eww open` acaban creando duplicados.
-  # timeout en el ping (no en `daemon`): un ping colgado dejaría esta rama
-  # esperando para siempre y el daemon sin arrancar.
-  timeout 5s eww -c "${HOME}/.config/eww" ping >/dev/null 2>&1 || eww -c "${HOME}/.config/eww" daemon &
+  # Daemon principal: lo arranca eww_call.sh, que es quien sabe distinguirlo
+  # del de display-manager y serializa el arranque con un cerrojo.
+  "${HOME}/.config/bspwm/scripts/lib/eww_call.sh" ping >/dev/null 2>&1 &
   # Display Control widget daemon (config propia; si ya corre, sale solo)
   eww --config "${HOME}/Documentos/Project/display-manager/widget/eww" daemon &
 

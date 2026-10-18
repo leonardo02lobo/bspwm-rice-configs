@@ -28,14 +28,10 @@
 # same millisecond, and neither can rely on observing the other's bookkeeping.
 # The pointer's position is unambiguous, and it is the thing we actually mean.
 
-# timeout bounds an IPC request that never gets an answer: without it the call
-# waits forever and the script never reaches the rest.
-#
-# It does NOT cover the other failure, measured on eww 0.6.0: a client that
-# cannot forward its command turns itself into a daemon and detaches (ppid 1).
-# It exits successfully, so timeout has nothing left to kill, and a second
-# daemon is left fighting over the socket. That one is still open.
-EWW=(timeout 5s eww -c "$HOME/.config/eww")
+# Every eww call goes through eww_call.sh: it starts the daemon when it is not
+# up, bounds the call with a timeout, and keeps a failed `open` from forking
+# into a second daemon.
+EWW=("$HOME/.config/bspwm/scripts/lib/eww_call.sh")
 STATE="/tmp/.eww_player_hover.state"
 GRACE=0.3   # absorbs the spurious leaves GTK fires when crossing onto buttons
 ANIM=0.25   # must outlast the revealer's transition, or the window dies mid-slide

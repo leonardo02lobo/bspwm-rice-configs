@@ -1,12 +1,7 @@
 #!/bin/bash
-# timeout acota una petición IPC que se queda sin respuesta: sin él la llamada
-# espera para siempre y el script nunca llega al resto.
-#
-# Ojo: NO evita el otro fallo, medido en eww 0.6.0 — un cliente que no logra
-# reenviar su orden se convierte él mismo en daemon y se desliga (ppid 1). Sale
-# con éxito, así que timeout no tiene a quién matar, y queda un segundo daemon
-# peleándose por el socket. Eso sigue pendiente.
-EWW=(timeout 5s eww -c "$HOME/.config/eww")
+# Toda llamada a eww pasa por eww_call.sh: arranca el daemon si no está, le
+# pone un timeout e impide que un `open` fallido se convierta en otro daemon.
+EWW=("$HOME/.config/bspwm/scripts/lib/eww_call.sh")
 
 STAMP_FILE="/tmp/.eww_brightness_stamp"
 STAMP=$(date +%s%N)

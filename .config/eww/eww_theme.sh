@@ -67,10 +67,6 @@ EOF
 
 echo "Tema cambiado a: $THEME"
 
-if ! pgrep -x eww; then 
-  eww daemon 
-fi 
-
-
-# timeout: `reload` es una petición IPC más y puede colgarse como las demás.
-timeout 5s eww reload
+# eww_call.sh arranca el daemon si no está: `pgrep -x eww` no servía aquí,
+# porque el de display-manager lo tapaba y este nunca llegaba a arrancar.
+"$HOME/.config/bspwm/scripts/lib/eww_call.sh" reload

@@ -1,9 +1,5 @@
 #!/bin/bash
-# timeout bounds an IPC request that never gets an answer: without it the call
-# waits forever and the script never reaches the rest.
-#
-# It does NOT cover the other failure, measured on eww 0.6.0: a client that
-# cannot forward its command turns itself into a daemon and detaches (ppid 1).
-# It exits successfully, so timeout has nothing left to kill, and a second
-# daemon is left fighting over the socket. That one is still open.
-timeout 5s eww -c ~/.config/eww open --toggle wifi
+# Every eww call goes through eww_call.sh: it starts the daemon when it is not
+# up, bounds the call with a timeout, and keeps a failed `open` from forking
+# into a second daemon.
+"$HOME/.config/bspwm/scripts/lib/eww_call.sh" open --toggle wifi
