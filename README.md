@@ -13,6 +13,7 @@ Personal BSPWM setup with custom EWW widgets and hardware-friendly input configu
 | Spotify widget | `.config/eww/player/` | EWW trigger in each bar's gap with a floating hover panel anchored below the bar |
 | Multi-monitor | `.config/bspwm/scripts/monitors/` | Per-monitor desktops, bars and Spotify trigger, plus a hotplug listener |
 | Scripts | `.config/bspwm/scripts/` | Helper scripts for brightness, volume, WiFi and touchpad |
+| eww wrapper | `.config/bspwm/scripts/lib/eww_call.sh` | The single entry point for every eww request; keeps one daemon alive |
 | Hotkeys | `.config/sxhkd/sxhkdrc` | Keyboard bindings (F5/F6 brightness, `super + ctrl + w` WiFi, media keys) |
 | Touchpad | `.config/bspwm/touchpad/` + `etc/X11/xorg.conf.d/` | libinput config for tap-to-click, natural scrolling and disable-while-typing |
 | BSPWM | `.config/bspwm/bspwmrc` | Session startup with daemons, touchpad and monitor setup |
@@ -26,6 +27,19 @@ Personal BSPWM setup with custom EWW widgets and hardware-friendly input configu
 - **Focus follows pointer**: the window under the mouse gets focus (clicking still focuses too).
 - **Spotify widget**: track metadata, playback controls, shuffle and repeat, driven over MPRIS with `playerctl`. Controls are shared with the media keys through `.config/sxhkd/scripts/spotify_control`, so both paths behave the same. The panel anchors to the top right, clearing the Polybar top bar by `4px`. Those offsets were measured with `xwininfo` against the running bar, not read from a config file — `config.ini` looks authoritative but `launch.sh` never loads it, so its numbers are wrong. **If you change the bar's height or margin, re-measure and update the offsets in `.config/eww/player/player.yuck`.** Every monitor's bar has its own trigger, and the panel opens on the monitor whose trigger is hovered.
 - **Idle, screensaver and lock**: three staggered stages — the idle screen at 5 min, the lock at 10, DPMS off at 15. A watcher polls how long the session has been idle and drives all three, because X's own idle machinery is inert here: the screensaver timer reaches zero and never activates, and the DPMS timers never fire either — measured, 103s of idle against a 15s timeout with the monitor still on. The panel is therefore powered off explicitly rather than scheduled. `xss-lock` is still used, but only with `--ignore-xss`, for the half that does work: locking before suspend, whether that comes from `super + F12` or from closing the lid. The idle screen is decoration only: it is an eww window per connected output showing the clock and what is playing, it holds no keyboard grab, and the lock always follows it. The lock deliberately does **not** blur a screenshot of the desktop — a blur still shows the shape of what was open, and this laptop gets locked in public places — so it uses the wallpaper instead. **Video does not inhibit the lock**, in a browser or in `mpv`: browsers ask through `org.freedesktop.ScreenSaver`, a D-Bus name nobody owns here, and although `mpv` suspends X's screensaver, this server does not reflect that in the extension's state — it was tested during a real suspend and still reported `Off` while the idle counter kept climbing. Use `super + ctrl + i` while watching. `xfce4-screensaver` must stay disabled: it is installed and D-Bus activatable, and two lockers fighting over the keyboard grab is worse than none.
+- **Every eww call goes through `.config/bspwm/scripts/lib/eww_call.sh`**, and
+  none of the scripts call `eww` directly. The reason is worth knowing before
+  you add a widget: when `eww open` cannot forward its command, the client
+  forks *itself* into a daemon and, coming up, unlinks the socket and rebinds
+  it. The daemon that was already running stays alive, deaf, still holding its
+  windows — and because those windows are `wm-ignore` overlays, nothing can
+  close them. A fullscreen idle screen stuck over the session and a volume OSD
+  parked on the desktop for hours both came from this. A `timeout` does not
+  help: the fork detaches to ppid 1 and the foreground process exits
+  successfully. The wrapper passes `--no-daemonize`, which turns the fallback
+  off, and takes over starting the daemon itself, under a lock, since nothing
+  else will now. It also notices a second daemon and recovers from it. **Use
+  it for anything new rather than calling `eww` directly.**
 - **Touchpad**: works like a laptop touchpad (tap-to-click, two-finger right click, three-finger middle click, natural scrolling, disable while typing).
 
 ## Requirements
