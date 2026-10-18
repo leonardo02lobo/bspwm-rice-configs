@@ -11,7 +11,16 @@
 # windows are transient. setup_monitors.sh owns the permanent ones — bars and
 # triggers — and has no business knowing whether the session is idle.
 
-EWW=(eww -c "$HOME/.config/eww")
+# timeout matters most here: bash runs no trap while a foreground command has
+# not returned, so an `open` that never answers would swallow the SIGTERM
+# idle_watch.sh sends and leave the fullscreen window up, out of reach of both
+# pointer and WM.
+#
+# It does NOT cover the other failure, measured on eww 0.6.0: a client that
+# cannot forward its command turns itself into a daemon and detaches (ppid 1).
+# It exits successfully, so timeout has nothing left to kill, and a second
+# daemon is left fighting over the socket. That one is still open.
+EWW=(timeout 5s eww -c "$HOME/.config/eww")
 ids=()
 
 cleanup() {

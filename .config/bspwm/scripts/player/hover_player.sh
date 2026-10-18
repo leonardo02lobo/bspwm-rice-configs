@@ -28,7 +28,14 @@
 # same millisecond, and neither can rely on observing the other's bookkeeping.
 # The pointer's position is unambiguous, and it is the thing we actually mean.
 
-CONFIG="$HOME/.config/eww"
+# timeout bounds an IPC request that never gets an answer: without it the call
+# waits forever and the script never reaches the rest.
+#
+# It does NOT cover the other failure, measured on eww 0.6.0: a client that
+# cannot forward its command turns itself into a daemon and detaches (ppid 1).
+# It exits successfully, so timeout has nothing left to kill, and a second
+# daemon is left fighting over the socket. That one is still open.
+EWW=(timeout 5s eww -c "$HOME/.config/eww")
 STATE="/tmp/.eww_player_hover.state"
 GRACE=0.3   # absorbs the spurious leaves GTK fires when crossing onto buttons
 ANIM=0.25   # must outlast the revealer's transition, or the window dies mid-slide
@@ -53,14 +60,14 @@ case "$1" in
     if [[ -f "$STATE" ]]; then
       [[ "$(<"$STATE")" == "$MONITOR" ]] && exit 0
       # Open under another monitor's trigger: collapse it there and reopen.
-      eww -c "$CONFIG" update player-hover=false
-      eww -c "$CONFIG" close player-panel 2>/dev/null
+      "${EWW[@]}" update player-hover=false
+      "${EWW[@]}" close player-panel 2>/dev/null
     fi
     printf '%s' "$MONITOR" > "$STATE"
-    eww -c "$CONFIG" open player-panel \
+    "${EWW[@]}" open player-panel \
       ${MONITOR:+--screen "$MONITOR" --arg monitor="$MONITOR"} 2>/dev/null
     sleep 0.05  # let the window realize collapsed, so the reveal animates
-    eww -c "$CONFIG" update player-hover=true
+    "${EWW[@]}" update player-hover=true
     ;;
 
   hide)
@@ -69,17 +76,17 @@ case "$1" in
       sleep "$GRACE"
       pointer_over_player && exit 0
       rm -f "$STATE"
-      eww -c "$CONFIG" update player-hover=false
+      "${EWW[@]}" update player-hover=false
       sleep "$ANIM"
       pointer_over_player && exit 0
-      eww -c "$CONFIG" close player-panel 2>/dev/null
+      "${EWW[@]}" close player-panel 2>/dev/null
     ) &
     ;;
 
   reset)
     rm -f "$STATE"
-    eww -c "$CONFIG" update player-hover=false
-    eww -c "$CONFIG" close player-panel 2>/dev/null
+    "${EWW[@]}" update player-hover=false
+    "${EWW[@]}" close player-panel 2>/dev/null
     ;;
 
   *)

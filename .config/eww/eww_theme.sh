@@ -72,4 +72,5 @@ if ! pgrep -x eww; then
 fi 
 
 
-eww reload
+# timeout: `reload` es una petición IPC más y puede colgarse como las demás.
+timeout 5s eww reload

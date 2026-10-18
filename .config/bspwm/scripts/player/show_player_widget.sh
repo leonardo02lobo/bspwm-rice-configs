@@ -10,8 +10,13 @@
 # output would strand it on a screen with no bar as soon as a second monitor
 # becomes primary.
 #
-# timeout guards against eww hanging forever waiting on an IPC reply that never
-# arrives — without it, every keypress leaves behind a zombie process.
+# timeout bounds an IPC request that never gets an answer: without it the call
+# waits forever and the script never reaches the rest.
+#
+# It does NOT cover the other failure, measured on eww 0.6.0: a client that
+# cannot forward its command turns itself into a daemon and detaches (ppid 1).
+# It exits successfully, so timeout has nothing left to kill, and a second
+# daemon is left fighting over the socket. That one is still open.
 
 CONFIG="$HOME/.config/eww"
 

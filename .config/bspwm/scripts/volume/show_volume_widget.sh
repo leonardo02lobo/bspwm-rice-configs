@@ -10,13 +10,25 @@
 DIR="$HOME/.config/bspwm/scripts/volume"
 PIDFILE="/tmp/.eww_volume_timer.pid"
 
+# timeout acota una petición IPC que se queda sin respuesta: sin él la llamada
+# espera para siempre y el script nunca llega al resto.
+#
+# Ojo: NO evita el otro fallo, medido en eww 0.6.0 — un cliente que no logra
+# reenviar su orden se convierte él mismo en daemon y se desliga (ppid 1). Sale
+# con éxito, así que timeout no tiene a quién matar, y queda un segundo daemon
+# peleándose por el socket. Eso sigue pendiente.
+#
+# -c es explícito porque en esta máquina corre un segundo daemon de eww (el de
+# display-manager, que arranca bspwmrc), y un `eww` pelado puede alcanzarlo.
+EWW=(timeout 5s eww -c "$HOME/.config/eww")
+
 # Abre la ventana (arranca el daemon si hace falta; no-op si ya está abierta)
-eww open volume
+"${EWW[@]}" open volume
 
 # Empuja el estado real al widget
 vol=$("$DIR/get_volume.sh")
 mute=$("$DIR/get_mute.sh")
-eww update vol-level="$vol" vol-muted="$mute"
+"${EWW[@]}" update vol-level="$vol" vol-muted="$mute"
 
 # Cancela el timer de auto-cierre anterior y su `sleep` hijo, si siguen vivos
 if [[ -f "$PIDFILE" ]]; then
@@ -28,5 +40,5 @@ if [[ -f "$PIDFILE" ]]; then
 fi
 
 # Arma exactamente un nuevo timer de auto-cierre
-( sleep 3; eww close volume ) &
+( sleep 3; "${EWW[@]}" close volume ) &
 echo $! > "$PIDFILE"
