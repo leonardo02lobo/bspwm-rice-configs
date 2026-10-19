@@ -63,6 +63,25 @@ SHALL existir un atajo que suspenda el bloqueo automático mientras esté activo
 - **WHEN** se pulsa de nuevo el atajo
 - **THEN** el bloqueo automático vuelve a estar operativo
 
+### Requirement: El vídeo en pantalla frena las etapas
+Mientras se esté reproduciendo vídeo, las tres etapas SHALL quedar frenadas. El tiempo que cubre ese freno SHALL descontarse de la cuenta de inactividad, no solo saltarse, de modo que al terminar la reproducción la cuenta reinicie desde cero. La detección SHALL basarse en MPRIS, porque en esta máquina ni `XScreenSaverSuspend` ni `org.freedesktop.ScreenSaver` llegan a nadie (medido).
+
+#### Scenario: Ver una película sin tocar el teclado
+- **WHEN** hay un reproductor de vídeo en `Playing` y transcurre el tiempo de inactividad
+- **THEN** no aparece la pantalla de reposo, no se bloquea la sesión y no se apaga el panel
+
+#### Scenario: La película termina
+- **WHEN** la reproducción se detiene tras más tiempo del umbral de bloqueo
+- **THEN** la sesión no se bloquea de inmediato, y la cuenta de inactividad arranca de nuevo desde cero
+
+#### Scenario: Escuchar música no cuenta como movimiento
+- **WHEN** solo hay un reproductor de música en `Playing`
+- **THEN** las etapas siguen su curso y el panel puede apagarse
+
+#### Scenario: Un reproductor no contemplado
+- **WHEN** el reproductor en uso no expone MPRIS o no está en la lista de vídeo
+- **THEN** la inhibición manual sigue siendo la salida
+
 ### Requirement: El apagado de pantalla llega después del bloqueo
 El apagado del panel SHALL ocurrir después de que la sesión esté bloqueada, nunca antes, y SHALL forzarse explícitamente en lugar de programarse con los temporizadores de DPMS, que en esta máquina no disparan.
 
