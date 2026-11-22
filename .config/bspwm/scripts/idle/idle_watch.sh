@@ -21,9 +21,9 @@ LOCK="$HERE/lock.sh"
 VIDEO="$HERE/video_playing.sh"
 INHIBITED="${XDG_RUNTIME_DIR:-/tmp}/idle_inhibited"
 
-SCREENSAVER_AT=${SCREENSAVER_AT:-300}   # seconds idle before the idle screen
-LOCK_AT=${LOCK_AT:-600}                 # before the session locks
-DPMS_AT=${DPMS_AT:-900}                 # before the panel is powered off
+SCREENSAVER_AT=${SCREENSAVER_AT:-1800}  # seconds idle before the idle screen (30 min)
+LOCK_AT=${LOCK_AT:-3600}                # before the session locks (1 hour)
+DPMS_AT=${DPMS_AT:-3900}                # before the panel is powered off (5 min after lock)
 POLL=${POLL:-5}
 
 screensaver_pid=""
